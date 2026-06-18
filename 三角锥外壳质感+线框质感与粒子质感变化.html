@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>未来科技三角锥 - 15°黄金自转矩阵</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- MediaPipe Hands -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600&display=swap');
+    body {
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #000;
+      overflow: hidden;
+    }
+    /* 隐藏滚动条 */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    /* 玻璃拟态效果 */
+    .glassmorphism {
+      background: rgba(10, 10, 10, 0.78);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .text-gold {
+      color: #E8CCA0;
+    }
+    .bg-gold {
+      background-color: #E8CCA0;
+    }
+    .border-gold {
+      border-color: #E8CCA0;
+    }
+    /* 炫酷渐变发光 */
+    .glow-gold {
+      box-shadow: 0 0 20px rgba(232, 204, 160, 0.25);
+    }
+    /* 呼吸灯特效 */
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.8; }
+    }
+    .camera-active-dot {
+      animation: pulse-glow 2s infinite;
+    }
+  </style>
+</head>
+<body class="text-gray-100 h-screen w-screen flex relative select-none">
+
+  <!-- 3D 渲染画布容器 -->
+  <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+  <!-- UI 悬浮控制面板 -->
+  <div class="absolute inset-y-0 left-0 w-80 p-6 flex flex-col justify-between z-10 pointer-events-none">
+    
+    <!-- 顶部状态栏 -->
+    <div class="glassmorphism rounded-2xl p-5 pointer-events-auto flex flex-col gap-4 glow-gold">
+      <div class="flex items-center justify-between">
+        <h1 class="text-xl font-bold tracking-wider text-gold flex items-center gap-2">
+          <i data-lucide="triangle" class="w-6 h-6 animate-spin" style="animation-duration: 12s"></i>
+          PYRAMID <span class="text-white font-light text-sm">MATRIX</span>
+        </h1>
+        <span class="text-xs bg-white/10 px-2 py-0.5 rounded-full text-gray-400">v2.8</span>
+      </div>
+      <p class="text-xs text-gray-400 leading-relaxed">
+        纯正三角锥哑光半透外壳，内部折射 <span class="text-gold font-semibold">#E8CCA0</span> 8:2 无缝极细流线中轴。$360^\circ$ 高效紧凑渐变闭环，支持手势感知。
+      </p>
+    </div>
+
+    <!-- 中部动态状态反馈 -->
+    <div class="glassmorphism rounded-2xl p-5 pointer-events-auto flex flex-col gap-4 my-4">
+      <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-widest flex items-center justify-between">
+        <span>实时材质状态</span>
+        <span id="dimension-tag" class="text-gold text-[10px] bg-gold/10 px-2 py-0.5 rounded border border-gold/20">立体渲染</span>
+      </h2>
+      
+      <!-- 旋转进度条 -->
+      <div class="flex flex-col gap-1.5">
+        <div class="flex justify-between text-xs text-gray-400">
+          <span>当前旋转偏角</span>
+          <span id="rotation-val" class="font-bold text-white">0°</span>
+        </div>
+        <div class="w-full bg-white/10 h-1 rounded-full overflow-hidden">
+          <div id="rotation-bar" class="bg-gold h-full w-0 transition-all duration-75"></div>
+        </div>
+      </div>
+
+      <!-- 交互状态 -->
+      <div class="grid grid-cols-2 gap-3 text-xs">
+        <div class="bg-white/5 p-2 rounded-lg border border-white/5">
+          <div class="text-gray-400 mb-0.5">控制状态</div>
+          <span id="control-state" class="font-medium text-gold">自动演进</span>
+        </div>
+        <div class="bg-white/5 p-2 rounded-lg border border-white/5">
+          <div class="text-gray-400 mb-0.5">相机视距</div>
+          <span id="distance-val" class="font-medium text-white">6.0m</span>
+        </div>
+      </div>
+
+      <!-- 维度提示器 (高内聚过渡) -->
+      <div class="flex flex-col gap-2 pt-1 border-t border-white/5 text-[11px] text-gray-500">
+        <div class="flex items-center gap-2" id="tip-solid">
+          <div class="w-2 h-2 rounded-full bg-gold"></div>
+          <span>0° -> 160° : 纯三角磨砂立体壳</span>
+        </div>
+        <div class="flex items-center gap-2" id="tip-wire">
+          <div class="w-2 h-2 rounded-full bg-gray-600"></div>
+          <span>160° -> 200° -> 240° : 渐变白色线框</span>
+        </div>
+        <div class="flex items-center gap-2" id="tip-particle">
+          <div class="w-2 h-2 rounded-full bg-gray-600"></div>
+          <span>240° -> 280° -> 340° : 渐变高亮粒子</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 颜色与亮度调节 -->
+    <div class="glassmorphism rounded-2xl p-5 pointer-events-auto flex flex-col gap-4 my-4">
+      <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+        <i data-lucide="palette" class="w-3.5 h-3.5"></i>
+        <span>颜色与亮度</span>
+      </h2>
+
+      <div class="flex flex-col gap-1.5">
+        <div class="flex justify-between text-xs text-gray-400">
+          <span>主色调</span>
+          <span id="color-hex-label" class="font-bold text-gold">#C9A86C</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <input id="pyramid-color-picker" type="color" value="#C9A86C"
+            class="w-10 h-8 rounded cursor-pointer bg-transparent border border-white/10 p-0.5">
+          <div id="color-preview" class="flex-1 h-8 rounded-lg border border-white/10" style="background: #C9A86C"></div>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <div class="flex justify-between text-xs text-gray-400">
+          <span>整体亮度</span>
+          <span id="brightness-val" class="font-bold text-white">55%</span>
+        </div>
+        <input id="brightness-slider" type="range" min="10" max="150" value="55"
+          class="w-full accent-[#E8CCA0] h-1 bg-white/10 rounded-lg appearance-none cursor-pointer">
+      </div>
+    </div>
+
+    <!-- 底部手势引导 -->
+    <div class="glassmorphism rounded-2xl p-5 pointer-events-auto flex flex-col gap-3">
+      <div class="flex items-center gap-2 text-xs text-gray-300 font-semibold uppercase tracking-wider">
+        <i data-lucide="info" class="w-4 h-4 text-gold"></i>
+        <span>手势交互物理逻辑</span>
+      </div>
+      <div class="flex flex-col gap-2 text-xs text-gray-400">
+        <div class="flex items-start gap-2">
+          <span class="bg-white/10 text-white rounded w-5 h-5 flex items-center justify-center text-[10px] shrink-0 font-bold">1</span>
+          <p>手掌旋转：控制三角锥同步顺/逆时针自转</p>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="bg-white/10 text-white rounded w-5 h-5 flex items-center justify-center text-[10px] shrink-0 font-bold">2</span>
+          <p>握拳拉远：相机**先慢后快**迅速远离三角锥</p>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="bg-white/10 text-white rounded w-5 h-5 flex items-center justify-center text-[10px] shrink-0 font-bold">3</span>
+          <p>张掌靠近：相机**先快后慢**温柔贴近</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右上角摄像头面板及手势反馈 -->
+  <div class="absolute top-6 right-6 z-10 flex flex-col items-end gap-4 pointer-events-none">
+    
+    <!-- 模拟操作台（用于无需相机测试） -->
+    <div class="glassmorphism rounded-2xl p-4 w-72 pointer-events-auto flex flex-col gap-3 glow-gold">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-gray-400 tracking-wider">快捷模拟测试面板</span>
+        <button id="toggle-mouse-ctrl" class="text-[10px] bg-gold text-black font-bold px-2 py-0.5 rounded hover:bg-white transition-colors">
+          切换手鼠
+        </button>
+      </div>
+      <div id="simulated-controls" class="flex flex-col gap-2">
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between text-[11px] text-gray-400">
+            <span>自转控制角 ($360^\circ$ 周期)</span>
+            <span id="sim-rot-label">0°</span>
+          </div>
+          <input id="sim-rot-slider" type="range" min="0" max="360" value="0" class="w-full accent-[#E8CCA0] h-1 bg-white/10 rounded-lg appearance-none cursor-pointer">
+        </div>
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between text-[11px] text-gray-400">
+            <span>视距拉伸 (手动)</span>
+            <span id="sim-dist-label">6.0m</span>
+          </div>
+          <input id="sim-dist-slider" type="range" min="3.5" max="25" value="6" step="0.1" class="w-full accent-[#E8CCA0] h-1 bg-white/10 rounded-lg appearance-none cursor-pointer">
+        </div>
+      </div>
+    </div>
+
+    <!-- 视频流容器 -->
+    <div class="glassmorphism rounded-2xl overflow-hidden p-2 w-48 relative pointer-events-auto">
+      <div class="absolute top-4 left-4 z-20 flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-red-500 camera-active-dot"></span>
+        <span class="text-[10px] font-bold text-white tracking-widest uppercase bg-black/60 px-2 py-0.5 rounded">HAND EYE</span>
+      </div>
+      <video id="webcam-video" class="w-full h-32 object-cover rounded-xl scale-x-[-1]" autoplay playsinline></video>
+      
+      <!-- 加载提示遮罩 -->
+      <div id="webcam-loading" class="absolute inset-2 bg-black/90 rounded-xl flex flex-col items-center justify-center gap-2 z-10 transition-opacity duration-500">
+        <i data-lucide="loader-2" class="w-8 h-8 text-gold animate-spin"></i>
+        <span class="text-[10px] text-gray-400 font-medium">寻找手势设备...</span>
+      </div>
+    </div>
+
+    <!-- 手势识别状态气泡 -->
+    <div id="gesture-bubble" class="glassmorphism rounded-full px-4 py-2 flex items-center gap-2 opacity-0 transition-all duration-300 transform translate-y-2">
+      <span id="gesture-icon" class="text-gold text-lg">💡</span>
+      <span id="gesture-name" class="text-xs font-semibold text-white">未检测到手势</span>
+    </div>
+  </div>
+
+  <!-- JS 业务代码 -->
+  <script>
+    // 初始化 Lucide 图标
+    lucide.createIcons();
+
+    // ----------------- CONFIG & GLOBALS -----------------
+    const DEFAULT_PYRAMID_COLOR = '#C9A86C';
+    const DEFAULT_BRIGHTNESS = 0.55;
+    const MIN_CAMERA_DIST = 3.5;
+    const MAX_CAMERA_DIST = 25.0;
+
+    // 中轴核心几何体规格常量（三态 100% 绝对一致，杜绝变形与高度断层）
+    const SHAFT_RADIUS = 0.05;         // 极为纤细的现代中轴半径 (完全契合子弹头比例)
+    const SHAFT_CYL_HEIGHT = 1.92;     // 下部圆柱高度（中轴总高度 2.4m 的 80%）
+    const SHAFT_CONE_HEIGHT = 0.48;    // 上部圆锥尖端高度（中轴总高度 2.4m 的 20%）
+    
+    let scene, camera, renderer, clock;
+    let pyramidGroup;
+    let solidGroup, wireframeGroup, particleGroup;
+    let ambientParticles;
+    let pointLightCore;
+    let pyramidGoldMat;
+    let particleMat;
+    let ambientParticleMat;
+    let sceneLights = {};
+
+    let pyramidColorHex = DEFAULT_PYRAMID_COLOR;
+    let pyramidBrightness = DEFAULT_BRIGHTNESS;
+
+    const BASE_TONE_EXPOSURE = 1.35;
+    const BASE_LIGHT_INTENSITIES = {
+      mainSpot: 3.5,
+      rim: 1.8,
+      top: 2.0,
+      core: 3.5
+    };
+    const BASE_EMISSIVE_INTENSITY = 0.4;
+
+    // 交互状态变量 (初始相机距离拉近至 6.0m)
+    let currentRotation = 0; // 弧度
+    let cameraDistance = 6.0; 
+    let initialCameraAnimActive = true;
+
+    // 手势交互临时记忆
+    let prevPalmSize = null;
+    let handActive = false;
+    let handLastAngle = null;
+    let isFistZoomingOut = false;
+    let zoomOutVelocity = 0; // 握拳速度阻尼
+    let mouseControlOverridden = false; // 用户是否开启手动调试滑块
+
+    // ----------------- DOM ELEMENTS -----------------
+    const domRotationVal = document.getElementById('rotation-val');
+    const domRotationBar = document.getElementById('rotation-bar');
+    const domDimensionTag = document.getElementById('dimension-tag');
+    const domControlState = document.getElementById('control-state');
+    const domDistanceVal = document.getElementById('distance-val');
+    const domVideo = document.getElementById('webcam-video');
+    const domVideoLoading = document.getElementById('webcam-loading');
+    const domGestureBubble = document.getElementById('gesture-bubble');
+    const domGestureIcon = document.getElementById('gesture-icon');
+    const domGestureName = document.getElementById('gesture-name');
+    
+    const domSimRotSlider = document.getElementById('sim-rot-slider');
+    const domSimRotLabel = document.getElementById('sim-rot-label');
+    const domSimDistSlider = document.getElementById('sim-dist-slider');
+    const domSimDistLabel = document.getElementById('sim-dist-label');
+    const domToggleMouseCtrl = document.getElementById('toggle-mouse-ctrl');
+
+    // UI 激活状态节点
+    const tipSolid = document.getElementById('tip-solid');
+    const tipWire = document.getElementById('tip-wire');
+    const tipParticle = document.getElementById('tip-particle');
+
+    const domColorPicker = document.getElementById('pyramid-color-picker');
+    const domColorHexLabel = document.getElementById('color-hex-label');
+    const domColorPreview = document.getElementById('color-preview');
+    const domBrightnessSlider = document.getElementById('brightness-slider');
+    const domBrightnessVal = document.getElementById('brightness-val');
+
+    // ----------------- THREE.JS SETUP -----------------
+    function initThree() {
+      const container = document.getElementById('canvas-container');
+      
+      scene = new THREE.Scene();
+      // 添加深邃迷雾，实现“进实远虚”的高级空间质感
+      scene.fog = new THREE.FogExp2(0x000000, 0.08);
+
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+      
+      // 初始顶视视角，离三角锥近一点（高度为 6.0m）
+      camera.position.set(0, 6.0, 0.01); 
+      camera.lookAt(0, 1.2, 0); // 聚焦于中轴重心 1.2m 处
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.35;
+      container.appendChild(renderer.domElement);
+
+      clock = new THREE.Clock();
+
+      // 构建主体容器
+      pyramidGroup = new THREE.Group();
+      scene.add(pyramidGroup);
+
+      // 创建三向维度的三角锥材质展示层
+      createSolidRepresentation();
+      createWireframeRepresentation();
+      createParticleRepresentation();
+      createAmbientFloatingParticles();
+
+      // 建立高级多光源照射矩阵 (大幅增强侧向灯，并增设顶光照亮锥尖)
+      setupLights();
+
+      window.addEventListener('resize', onWindowResize);
+    }
+
+    // ----------------- LIGHTS MATRIX -----------------
+    function setupLights() {
+      // 基础环境暗部填充
+      const ambientLight = new THREE.AmbientLight(0x0a0a0a);
+      scene.add(ambientLight);
+
+      // 强侧向主聚光一：香槟温暖主灯，打在三角锥侧棱上，折射高贵亮边
+      const mainSpotLight1 = new THREE.DirectionalLight(0xfff5e6, BASE_LIGHT_INTENSITIES.mainSpot);
+      mainSpotLight1.position.set(6, 8, 5);
+      scene.add(mainSpotLight1);
+
+      // 辅背光二：冷色幽蓝边缘光，打在背侧棱角上，塑造冷暖对比
+      const rimLight = new THREE.DirectionalLight(0x88ccff, BASE_LIGHT_INTENSITIES.rim);
+      rimLight.position.set(-6, 6, -6);
+      scene.add(rimLight);
+
+      // 顶部垂向直射光：专为完美烘托纤细圆锥顶尖的黄色照度而设，拒绝法线避光发黑
+      const topLight = new THREE.DirectionalLight(0xfff6e0, BASE_LIGHT_INTENSITIES.top);
+      topLight.position.set(0, 10, 0);
+      scene.add(topLight);
+
+      // 内部发光核心点光源：带来由内而外的脉动
+      pointLightCore = new THREE.PointLight(DEFAULT_PYRAMID_COLOR, BASE_LIGHT_INTENSITIES.core, 9);
+      pointLightCore.position.set(0, 1.2, 0);
+      scene.add(pointLightCore);
+
+      sceneLights = { mainSpotLight1, rimLight, topLight, pointLightCore };
+    }
+
+    // ----------------- 1. 三角锥立体渲染维度 (SOLID) -----------------
+    function createSolidRepresentation() {
+      solidGroup = new THREE.Group();
+      pyramidGroup.add(solidGroup);
+
+      const r = 2.0; // 外面圆周半径
+      const h = 3.0; // 锥体高度
+
+      // 1.1 完美哑光半透明外壳材质 (Matte Glass, 3分段底构成三棱锥外壳)
+      const shellGeo = new THREE.ConeGeometry(r, h, 3, 1, true); // 无底面盖板
+      const shellMat = new THREE.MeshPhysicalMaterial({
+        color: 0x111111,          // 更加质感厚重的深色基底
+        roughness: 0.35,          // 高档哑光磨砂质感
+        metalness: 0.1,
+        transmission: 0.75,       // 半透折射
+        thickness: 1.8,           // 物理厚度
+        transparent: true,
+        opacity: 0.85,            // 提高不透明度，使外壳棱边高光轮廓清晰可辨，不再完全透明
+        side: THREE.DoubleSide,
+        depthWrite: true,
+        clearcoat: 1.0,           // 附加高级漆面高光，突显三棱锥斜面轮廓
+        clearcoatRoughness: 0.1
+      });
+      const shellMesh = new THREE.Mesh(shellGeo, shellMat);
+      shellMesh.position.y = h / 2; // 底面对齐 y = 0
+      solidGroup.add(shellMesh);
+
+      // 1.2 金色晶莹三角底板 (E8CCA0) - 3分段圆柱完美契合
+      const baseGeo = new THREE.CylinderGeometry(r, r, 0.08, 3);
+      pyramidGoldMat = new THREE.MeshPhysicalMaterial({
+        color: DEFAULT_PYRAMID_COLOR,
+        metalness: 0.9,
+        roughness: 0.15,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.05,
+        envMapIntensity: 1.5,
+        emissive: 0x2d1f11,
+        emissiveIntensity: BASE_EMISSIVE_INTENSITY
+      });
+      const goldMat = pyramidGoldMat;
+      const baseMesh = new THREE.Mesh(baseGeo, goldMat);
+      baseMesh.position.y = -0.04;
+      solidGroup.add(baseMesh);
+
+      // 1.3 核心中轴：下部圆柱高 1.92m，上部圆锥高 0.48m（严格采用全局常量构建）
+      // 统一纤细半径 0.05，两端完全平滑一体，彻底解决断层、高度溢出等全部遮挡问题
+      const cylGeo = new THREE.CylinderGeometry(SHAFT_RADIUS, SHAFT_RADIUS, SHAFT_CYL_HEIGHT, 64);
+      const cylMesh = new THREE.Mesh(cylGeo, goldMat);
+      cylMesh.position.y = SHAFT_CYL_HEIGHT / 2; // y 起点在 0，终点在 1.92m
+      solidGroup.add(cylMesh);
+
+      // 锥尖底面半径完美咬合圆柱顶部，高度 0.48m，完全平滑一体化连接 (类似于抛光的铅笔头或子弹头)
+      const coneAxisGeo = new THREE.ConeGeometry(SHAFT_RADIUS, SHAFT_CONE_HEIGHT, 64);
+      const coneAxisMesh = new THREE.Mesh(coneAxisGeo, goldMat);
+      // y 轴位置精准对齐：1.92 + 0.24 = 2.16m，锥尖顶点完美位于 2.40m，相比于外壳顶部 apex (3.0m) 留足空间
+      coneAxisMesh.position.y = SHAFT_CYL_HEIGHT + (SHAFT_CONE_HEIGHT / 2); 
+      solidGroup.add(coneAxisMesh);
+    }
+
+    // ----------------- 2. 白色三角线框描边维度 (WIREFRAME) -----------------
+    function createWireframeRepresentation() {
+      wireframeGroup = new THREE.Group();
+      pyramidGroup.add(wireframeGroup);
+
+      const r = 2.0;
+      const h = 3.0;
+
+      const wireframeLineMat = new THREE.LineBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0,
+        linewidth: 1.5
+      });
+
+      // 2.1 外壳三面线框
+      const shellGeo = new THREE.ConeGeometry(r, h, 3, 1, true);
+      const shellWireGeo = new THREE.WireframeGeometry(shellGeo);
+      const shellWireLines = new THREE.LineSegments(shellWireGeo, wireframeLineMat);
+      shellWireLines.position.y = h / 2;
+      wireframeGroup.add(shellWireLines);
+
+      // 2.2 三角底板线框
+      const baseGeo = new THREE.CylinderGeometry(r, r, 0.08, 3);
+      const baseWireGeo = new THREE.WireframeGeometry(baseGeo);
+      const baseWireLines = new THREE.LineSegments(baseWireGeo, wireframeLineMat);
+      baseWireLines.position.y = -0.04;
+      wireframeGroup.add(baseWireLines);
+
+      // 2.3 轴柱线框 (高1.92m, 统一纤细半径 0.05)
+      const cylGeo = new THREE.CylinderGeometry(SHAFT_RADIUS, SHAFT_RADIUS, SHAFT_CYL_HEIGHT, 16);
+      const cylWireGeo = new THREE.WireframeGeometry(cylGeo);
+      const cylWireLines = new THREE.LineSegments(cylWireGeo, wireframeLineMat);
+      cylWireLines.position.y = SHAFT_CYL_HEIGHT / 2;
+      wireframeGroup.add(cylWireLines);
+
+      // 2.4 轴锥线框 (高0.48m, 统一纤细半径 0.05)
+      const coneAxisGeo = new THREE.ConeGeometry(SHAFT_RADIUS, SHAFT_CONE_HEIGHT, 16);
+      const coneAxisWireGeo = new THREE.WireframeGeometry(coneAxisGeo);
+      const coneAxisWireLines = new THREE.LineSegments(coneAxisWireGeo, wireframeLineMat);
+      coneAxisWireLines.position.y = SHAFT_CYL_HEIGHT + (SHAFT_CONE_HEIGHT / 2);
+      wireframeGroup.add(coneAxisWireLines);
+    }
+
+    // ----------------- 3. 大量球形小粒子维度 (PARTICLES) -----------------
+    function createParticleRepresentation() {
+      particleGroup = new THREE.Group();
+      pyramidGroup.add(particleGroup);
+
+      const r = 2.0;
+      const h = 3.0;
+
+      const particleVertices = [];
+
+      // 三角形采样
+      function sampleTriangle(A, B, C, density) {
+        for (let i = 0; i < density; i++) {
+          const r1 = Math.random();
+          const r2 = Math.random();
+          const sqrtR1 = Math.sqrt(r1);
+          const x = (1 - sqrtR1) * A.x + (sqrtR1 * (1 - r2)) * B.x + (sqrtR1 * r2) * C.x;
+          const y = (1 - sqrtR1) * A.y + (sqrtR1 * (1 - r2)) * B.y + (sqrtR1 * r2) * C.y;
+          const z = (1 - sqrtR1) * A.z + (sqrtR1 * (1 - r2)) * B.z + (sqrtR1 * r2) * C.z;
+          particleVertices.push(x, y, z);
+        }
+      }
+
+      // 三棱锥顶点与底角
+      const T = new THREE.Vector3(0, h, 0);
+      const V = [];
+      for (let i = 0; i < 3; i++) {
+        const theta = (i * 2 * Math.PI) / 3;
+        V.push(new THREE.Vector3(r * Math.cos(theta), 0, r * Math.sin(theta)));
+      }
+
+      // 给三个斜边侧面均匀注入密集粒子
+      sampleTriangle(T, V[0], V[1], 1200);
+      sampleTriangle(T, V[1], V[2], 1200);
+      sampleTriangle(T, V[2], V[0], 1200);
+
+      // 采样三角底盖
+      const center = new THREE.Vector3(0, 0, 0);
+      sampleTriangle(center, V[0], V[1], 400);
+      sampleTriangle(center, V[1], V[2], 400);
+      sampleTriangle(center, V[2], V[0], 400);
+
+      // 3.1 沿金色中轴生成密集粒子（完美契合 1.92m + 0.48m 尺寸及半径 0.05 的优雅极细流线空间，过渡自然无跳变）
+      // 圆柱金色点云部分 (y: 0.0 -> 1.92)
+      for (let i = 0; i < 800; i++) {
+        const yCoord = Math.random() * SHAFT_CYL_HEIGHT;
+        const angle = Math.random() * Math.PI * 2;
+        const rad = Math.random() * SHAFT_RADIUS;
+        particleVertices.push(rad * Math.cos(angle), yCoord, rad * Math.sin(angle));
+      }
+      // 圆锥金色点云部分 (y: 1.92 -> 2.40)
+      for (let i = 0; i < 200; i++) {
+        const t = Math.random(); // 0 到 1
+        const yCoord = SHAFT_CYL_HEIGHT + t * SHAFT_CONE_HEIGHT;
+        const angle = Math.random() * Math.PI * 2;
+        const rad = (1 - t) * SHAFT_RADIUS; // 向上向尖顶收窄至 0 
+        particleVertices.push(rad * Math.cos(angle), yCoord, rad * Math.sin(angle));
+      }
+
+      const pGeo = new THREE.BufferGeometry();
+      pGeo.setAttribute('position', new THREE.Float32BufferAttribute(particleVertices, 3));
+
+      // 动态生成 Canvas 高亮径向渐变粒子贴图 (极亮呈现)
+      particleMat = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.05,
+        map: createGlowTexture(DEFAULT_PYRAMID_COLOR),
+        transparent: true,
+        opacity: 0,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+
+      const points = new THREE.Points(pGeo, particleMat);
+      particleGroup.add(points);
+    }
+
+    // 动态绘制 Canvas 高亮发光小粒子
+    function createGlowTexture(hexColor) {
+      const threeColor = new THREE.Color(hexColor);
+      const r = Math.round(threeColor.r * 255);
+      const g = Math.round(threeColor.g * 255);
+      const b = Math.round(threeColor.b * 255);
+      const canvas = document.createElement('canvas');
+      canvas.width = 32;
+      canvas.height = 32;
+      const ctx = canvas.getContext('2d');
+      const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      grad.addColorStop(0.2, `rgba(${Math.min(255, r + 20)}, ${Math.min(255, g + 20)}, ${Math.min(255, b + 10)}, 0.95)`);
+      grad.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.3)`);
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 32, 32);
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    function applyPyramidColorAndBrightness() {
+      const threeColor = new THREE.Color(pyramidColorHex);
+      const emissiveColor = threeColor.clone().multiplyScalar(0.25);
+
+      if (pyramidGoldMat) {
+        pyramidGoldMat.color.copy(threeColor);
+        pyramidGoldMat.emissive.copy(emissiveColor);
+        pyramidGoldMat.emissiveIntensity = BASE_EMISSIVE_INTENSITY * pyramidBrightness;
+        pyramidGoldMat.envMapIntensity = 1.5 * pyramidBrightness;
+      }
+
+      if (pointLightCore) {
+        pointLightCore.color.copy(threeColor);
+        pointLightCore.intensity = BASE_LIGHT_INTENSITIES.core * pyramidBrightness;
+      }
+
+      if (sceneLights.mainSpotLight1) {
+        sceneLights.mainSpotLight1.intensity = BASE_LIGHT_INTENSITIES.mainSpot * pyramidBrightness;
+      }
+      if (sceneLights.rimLight) {
+        sceneLights.rimLight.intensity = BASE_LIGHT_INTENSITIES.rim * pyramidBrightness;
+      }
+      if (sceneLights.topLight) {
+        sceneLights.topLight.intensity = BASE_LIGHT_INTENSITIES.top * pyramidBrightness;
+      }
+
+      if (renderer) {
+        renderer.toneMappingExposure = BASE_TONE_EXPOSURE * pyramidBrightness;
+      }
+
+      const glowTex = createGlowTexture(pyramidColorHex);
+      if (particleMat) {
+        if (particleMat.map) particleMat.map.dispose();
+        particleMat.map = glowTex;
+        particleMat.needsUpdate = true;
+      }
+      if (ambientParticleMat) {
+        if (ambientParticleMat.map) ambientParticleMat.map.dispose();
+        ambientParticleMat.map = glowTex;
+        ambientParticleMat.needsUpdate = true;
+      }
+
+      domColorHexLabel.textContent = pyramidColorHex.toUpperCase();
+      domColorPreview.style.background = pyramidColorHex;
+      domBrightnessVal.textContent = `${Math.round(pyramidBrightness * 100)}%`;
+    }
+
+    // ----------------- 4. 漂浮的环境白粒子 (AMBIENT CLOUD) -----------------
+    function createAmbientFloatingParticles() {
+      const pCount = 200;
+      const positions = [];
+      const speeds = [];
+
+      for (let i = 0; i < pCount; i++) {
+        const x = (Math.random() - 0.5) * 16;
+        const y = Math.random() * 8;
+        const z = (Math.random() - 0.5) * 16;
+        positions.push(x, y, z);
+        
+        // 自定义上升浮漂速度
+        speeds.push(
+          (Math.random() - 0.5) * 0.015,
+          0.008 + Math.random() * 0.012,
+          (Math.random() - 0.5) * 0.015
+        );
+      }
+
+      const pGeo = new THREE.BufferGeometry();
+      pGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+      ambientParticleMat = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.035,
+        transparent: true,
+        opacity: 0.35,
+        map: createGlowTexture(DEFAULT_PYRAMID_COLOR),
+        blending: THREE.AdditiveBlending
+      });
+
+      ambientParticles = new THREE.Points(pGeo, ambientParticleMat);
+      ambientParticles.userData = { speeds: speeds };
+      scene.add(ambientParticles);
+    }
+
+    // ----------------- UPDATE FLOATING PARTICLES -----------------
+    function updateFloatingParticles() {
+      if (!ambientParticles) return;
+
+      const posAttr = ambientParticles.geometry.attributes.position;
+      const speeds = ambientParticles.userData.speeds;
+      const count = posAttr.count;
+
+      for (let i = 0; i < count; i++) {
+        let x = posAttr.getX(i);
+        let y = posAttr.getY(i);
+        let z = posAttr.getZ(i);
+
+        x += speeds[i * 3];
+        y += speeds[i * 3 + 1];
+        z += speeds[i * 3 + 2];
+
+        // 越界重置
+        if (y > 8) y = 0;
+        if (Math.abs(x) > 8) x = (Math.random() - 0.5) * 16;
+        if (Math.abs(z) > 8) z = (Math.random() - 0.5) * 16;
+
+        posAttr.setXYZ(i, x, y, z);
+      }
+      posAttr.needsUpdate = true;
+    }
+
+    // ----------------- 紧凑型 $360^\circ$ 周期平滑过渡算法 -----------------
+    function updateRepresentationTransitions(degAngle) {
+      // 角度归一化在 0 ~ 360度 循环
+      const angle = (degAngle % 360 + 360) % 360;
+
+      let solidOpacity = 0;
+      let wireframeOpacity = 0;
+      let particleOpacity = 0;
+
+      // 1. 0° -> 200°：立体磨砂外壳过渡至白色线框描边
+      if (angle >= 0 && angle < 200) {
+        // 在前部分维持立体，在 160° 到 200° 的 40° 狭窄区间进行自然转换
+        if (angle < 160) {
+          solidOpacity = 1;
+          wireframeOpacity = 0;
+        } else {
+          const t = (angle - 160) / 40;
+          solidOpacity = 1 - t;
+          wireframeOpacity = t;
+        }
+        particleOpacity = 0;
+      }
+      // 2. 200° -> 280°：线框描边过渡至璀璨小球粒子
+      else if (angle >= 200 && angle < 280) {
+        // 在 240° 到 280° 的 40° 狭窄区间进行自然线框崩坍成粒子转换
+        if (angle < 240) {
+          solidOpacity = 0;
+          wireframeOpacity = 1;
+          particleOpacity = 0;
+        } else {
+          const t = (angle - 240) / 40;
+          solidOpacity = 0;
+          wireframeOpacity = 1 - t;
+          particleOpacity = t;
+        }
+      }
+      // 3. 280° -> 360°：小球粒子凝聚过渡回立体渲染
+      else if (angle >= 280 && angle <= 360) {
+        // 在 300° 到 340° 的 40° 狭窄区间重新凝聚归一
+        if (angle < 300) {
+          solidOpacity = 0;
+          wireframeOpacity = 0;
+          particleOpacity = 1;
+        } else if (angle < 340) {
+          const t = (angle - 300) / 40;
+          solidOpacity = t;
+          wireframeOpacity = 0;
+          particleOpacity = 1 - t;
+        } else {
+          solidOpacity = 1;
+          wireframeOpacity = 0;
+          particleOpacity = 0;
+        }
+      }
+
+      // ---- 应用到三维网格材质 ----
+      
+      solidGroup.visible = solidOpacity > 0;
+      if (solidGroup.visible) {
+        solidGroup.traverse((child) => {
+          if (child.isMesh) {
+            child.material.opacity = child.constructor.name === "MeshPhysicalMaterial" 
+              ? 0.85 * solidOpacity // 保持高级偏厚磨砂外壳的0.85透明度遮罩，避免完全隐形
+              : solidOpacity;
+            child.material.transparent = true;
+          }
+        });
+      }
+
+      wireframeGroup.visible = wireframeOpacity > 0;
+      if (wireframeGroup.visible) {
+        wireframeGroup.traverse((child) => {
+          if (child.isLine) {
+            child.material.opacity = wireframeOpacity;
+            child.material.transparent = true;
+          }
+        });
+      }
+
+      particleGroup.visible = particleOpacity > 0;
+      if (particleGroup.visible) {
+        particleGroup.traverse((child) => {
+          if (child.isPoints) {
+            child.material.opacity = particleOpacity;
+            child.material.transparent = true;
+          }
+        });
+      }
+
+      // ---- 4. 更新 UI 页面数据 ----
+      domRotationVal.textContent = `${Math.round(angle)}°`;
+      domRotationBar.style.width = `${(angle / 360) * 100}%`;
+
+      // 同步高亮右下角状态指示灯
+      tipSolid.classList.toggle('text-gold', solidOpacity > 0.5);
+      tipWire.classList.toggle('text-gold', wireframeOpacity > 0.5);
+      tipParticle.classList.toggle('text-gold', particleOpacity > 0.5);
+
+      if (solidOpacity > 0.5) {
+        domDimensionTag.textContent = "立体渲染 (SOLID)";
+        domDimensionTag.style.borderColor = "rgba(232,204,160,0.3)";
+        domDimensionTag.style.color = "#E8CCA0";
+      } else if (wireframeOpacity > 0.5) {
+        domDimensionTag.textContent = "三角线框 (WIRE)";
+        domDimensionTag.style.borderColor = "rgba(255,255,255,0.3)";
+        domDimensionTag.style.color = "#FFFFFF";
+      } else if (particleOpacity > 0.5) {
+        domDimensionTag.textContent = "璀璨粒子 (PARTICLE)";
+        domDimensionTag.style.borderColor = "rgba(136,204,255,0.3)";
+        domDimensionTag.style.color = "#88ccff";
+      }
+    }
+
+    // ----------------- CAMERA RESIZE -----------------
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // ----------------- GESTURE CORE ENGINE -----------------
+    function setupMediaPipe() {
+      const hands = new Hands({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+      });
+
+      hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.65,
+        minTrackingConfidence: 0.65
+      });
+
+      hands.onResults(onHandResults);
+
+      const cameraSource = new Camera(domVideo, {
+        onFrame: async () => {
+          await hands.send({ image: domVideo });
+        },
+        width: 480,
+        height: 360
+      });
+
+      cameraSource.start()
+        .then(() => {
+          domVideoLoading.classList.add('opacity-0');
+          setTimeout(() => domVideoLoading.style.display = 'none', 500);
+        })
+        .catch(err => {
+          console.warn("摄像头开启失效，请通过手动测试滑块检验:", err);
+          domVideoLoading.innerHTML = `<p class="text-xs text-red-400 text-center px-4">无法开启摄像头设备。<br/>已为您唤醒快捷模拟测试台。</p>`;
+        });
+    }
+
+    function getDistance(pt1, pt2) {
+      return Math.sqrt(Math.pow(pt1.x - pt2.x, 2) + Math.pow(pt1.y - pt2.y, 2));
+    }
+
+    function onHandResults(results) {
+      if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+        if (handActive) {
+          handActive = false;
+          prevPalmSize = null;
+          handLastAngle = null;
+          fadeOutGestureBubble();
+        }
+        return;
+      }
+
+      handActive = true;
+      const landmarks = results.multiHandLandmarks[0];
+
+      // 1. 估测手掌离相机的深度距离 (0号腕底 到 9号中指MCP)
+      const palmSize = getDistance(landmarks[0], landmarks[9]);
+
+      const fingerTips = [8, 12, 16, 20];
+      const fingerBases = [5, 9, 13, 17];
+      
+      let extendedFingers = 0;
+      for (let i = 0; i < 4; i++) {
+        const tipDist = getDistance(landmarks[fingerTips[i]], landmarks[0]);
+        const baseDist = getDistance(landmarks[fingerBases[i]], landmarks[0]);
+        if (tipDist > baseDist * 1.35) {
+          extendedFingers++;
+        }
+      }
+
+      const isFist = (extendedFingers <= 1);
+      const isOpenHand = (extendedFingers >= 3);
+
+      // ---- 手势 1：转动手掌控制旋转 ----
+      const dx = landmarks[9].x - landmarks[0].x;
+      const dy = -(landmarks[9].y - landmarks[0].y);
+      const currentHandAngle = Math.atan2(dy, dx);
+
+      if (handLastAngle !== null && !mouseControlOverridden) {
+        let angleDelta = currentHandAngle - handLastAngle;
+        
+        if (angleDelta > Math.PI) angleDelta -= 2 * Math.PI;
+        if (angleDelta < -Math.PI) angleDelta += 2 * Math.PI;
+
+        // 旋转交互推动
+        currentRotation += angleDelta * 1.6;
+        domControlState.textContent = "手势操控中";
+      }
+      handLastAngle = currentHandAngle;
+
+      // ---- 手势 2 & 3：拉近拉远 (握拳加速远离，张掌减速靠近) ----
+      if (prevPalmSize !== null && !mouseControlOverridden) {
+        const sizeDelta = palmSize - prevPalmSize;
+
+        if (isFist) {
+          if (sizeDelta < -0.001) {
+            isFistZoomingOut = true;
+            // 握拳后推：速度先慢后快，呈二次函数平滑递增
+            zoomOutVelocity += 0.08; 
+            cameraDistance += zoomOutVelocity;
+            cameraDistance = Math.min(MAX_CAMERA_DIST, cameraDistance);
+            showGestureBubble("✊", "握拳：远离中 (先慢后快加速)");
+          } else {
+            zoomOutVelocity *= 0.85; // 缓释阻尼
+            cameraDistance += zoomOutVelocity;
+            cameraDistance = Math.min(MAX_CAMERA_DIST, cameraDistance);
+            showGestureBubble("✊", "握拳就绪");
+          }
+        } 
+        else if (isOpenHand) {
+          isFistZoomingOut = false;
+          zoomOutVelocity = 0;
+
+          if (sizeDelta > 0.001) {
+            // 张掌前推：经典缓动趋近算法，距离越近速度越慢，安全缓冲防撞
+            const distanceGap = cameraDistance - MIN_CAMERA_DIST;
+            if (distanceGap > 0) {
+              cameraDistance -= distanceGap * 0.15;
+            }
+            showGestureBubble("🖐️", "张掌：靠近中 (先快后慢缓冲)");
+          } else {
+            showGestureBubble("🖐️", "五指张开");
+          }
+        } 
+        else {
+          isFistZoomingOut = false;
+          zoomOutVelocity *= 0.8;
+          showGestureBubble("✨", "感知握持中");
+        }
+      }
+
+      prevPalmSize = palmSize;
+    }
+
+    // ----------------- GESTURE STATE UI -----------------
+    function showGestureBubble(icon, text) {
+      domGestureIcon.textContent = icon;
+      domGestureName.textContent = text;
+      domGestureBubble.classList.remove('opacity-0', 'translate-y-2');
+    }
+
+    // 淡出气泡
+    function fadeOutGestureBubble() {
+      domGestureBubble.classList.add('opacity-0', 'translate-y-2');
+      domControlState.textContent = "自动演进";
+    }
+
+    // ----------------- COLOR & BRIGHTNESS UI -----------------
+    function setupColorBrightnessUI() {
+      domColorPicker.addEventListener('input', (e) => {
+        pyramidColorHex = e.target.value;
+        applyPyramidColorAndBrightness();
+      });
+
+      domBrightnessSlider.addEventListener('input', (e) => {
+        pyramidBrightness = parseFloat(e.target.value) / 100;
+        applyPyramidColorAndBrightness();
+      });
+    }
+
+    // ----------------- SIMULATION EVENT LISTENERS -----------------
+    function setupSimulationUI() {
+      domToggleMouseCtrl.addEventListener('click', () => {
+        mouseControlOverridden = !mouseControlOverridden;
+        if (mouseControlOverridden) {
+          domToggleMouseCtrl.textContent = "释放手势";
+          domToggleMouseCtrl.classList.replace('bg-gold', 'bg-white');
+          domControlState.textContent = "模拟操控";
+        } else {
+          domToggleMouseCtrl.textContent = "切换手鼠";
+          domToggleMouseCtrl.classList.replace('bg-white', 'bg-gold');
+          domControlState.textContent = "自动演进";
+        }
+      });
+
+      domSimRotSlider.addEventListener('input', (e) => {
+        if (!mouseControlOverridden) {
+          mouseControlOverridden = true;
+          domToggleMouseCtrl.textContent = "释放手势";
+          domToggleMouseCtrl.classList.replace('bg-gold', 'bg-white');
+          domControlState.textContent = "模拟操控";
+        }
+        const deg = parseFloat(e.target.value);
+        currentRotation = (deg * Math.PI) / 180;
+        domSimRotLabel.textContent = `${deg}°`;
+      });
+
+      domSimDistSlider.addEventListener('input', (e) => {
+        if (!mouseControlOverridden) {
+          mouseControlOverridden = true;
+          domToggleMouseCtrl.textContent = "释放手势";
+          domToggleMouseCtrl.classList.replace('bg-gold', 'bg-white');
+          domControlState.textContent = "模拟操控";
+        }
+        cameraDistance = parseFloat(e.target.value);
+        domSimDistLabel.textContent = `${cameraDistance.toFixed(1)}m`;
+      });
+    }
+
+    // ----------------- ANIMATION / RENDER LOOP -----------------
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const delta = clock.getDelta();
+      const totalTime = clock.getElapsedTime();
+
+      // 1. 第一阶段：0.0s -> 2.0s 强制顶视镜头完全静止，距离三角锥拉近至 6.0m
+      if (totalTime < 2.0) {
+        camera.position.set(0, cameraDistance, 0.01);
+        camera.lookAt(0, 1.2, 0); // 聚焦于中轴完美中心
+        currentRotation = 0;
+      }
+      // 第二阶段：2.0s -> 4.0s 摄像机平滑下降偏转过渡至 15度俯视黄金视角
+      else if (totalTime >= 2.0 && totalTime < 4.0) {
+        const progress = (totalTime - 2.0) / 2.0;
+        const smoothProgress = progress * progress * (3 - 2 * progress); // 缓入缓出插值
+
+        const startPos = new THREE.Vector3(0, cameraDistance, 0.01);
+        
+        // 15度俯视角对应的极角 (仰角与Y轴夹角 phi = 90 - 15 = 75度)
+        const pitchRad = (75 * Math.PI) / 180;
+        const endPos = new THREE.Vector3(
+          0,
+          cameraDistance * Math.cos(pitchRad),
+          cameraDistance * Math.sin(pitchRad)
+        );
+
+        camera.position.lerpVectors(startPos, endPos, smoothProgress);
+        camera.lookAt(0, 1.2, 0);
+        currentRotation = 0.01;
+      }
+      // 第三阶段：4.0s 之后，开始无限循环匀速慢转或手势实时控制自转
+      else {
+        if (!handActive && !mouseControlOverridden) {
+          currentRotation += 0.005; // 演化自转速率
+        }
+
+        // 定位渲染：15度黄金俯角，绕世界 Y 轴公转
+        const pitchRad = (75 * Math.PI) / 180;
+        camera.position.x = cameraDistance * Math.sin(pitchRad) * Math.sin(currentRotation);
+        camera.position.y = cameraDistance * Math.cos(pitchRad);
+        camera.position.z = cameraDistance * Math.sin(pitchRad) * Math.cos(currentRotation);
+        camera.lookAt(0, 1.2, 0);
+      }
+
+      // 2. 三角锥旋转：将其 Y 轴自转锁定在 0，通过上述摄像机公转来代替自转，
+      // 从而让环境高光、反光和阴影产生迷人的物理位置漂移（解决潮汐锁定问题）
+      pyramidGroup.rotation.y = 0;
+
+      // 3. 计算自转偏角，归一化映射至 0 ~ 360° 无缝自适应过渡材质
+      const curAngleDeg = (currentRotation * (180 / Math.PI)) % 360;
+      updateRepresentationTransitions(curAngleDeg);
+
+      // 4. 浮空粒子微粒流动
+      updateFloatingParticles();
+
+      // 5. 中间发光源核心轻微呼吸闪烁
+      if (pointLightCore) {
+        const pulse = 2.0 + Math.sin(totalTime * 3.5) * 0.8;
+        pointLightCore.intensity = pulse * pyramidBrightness;
+      }
+
+      // 6. 同步更新状态参数
+      domDistanceVal.textContent = `${cameraDistance.toFixed(1)}m`;
+      if (!mouseControlOverridden) {
+        const normalizedDeg = Math.round((curAngleDeg % 360 + 360) % 360);
+        domSimRotSlider.value = normalizedDeg;
+        domSimRotLabel.textContent = `${normalizedDeg}°`;
+        domSimDistSlider.value = cameraDistance;
+        domSimDistLabel.textContent = `${cameraDistance.toFixed(1)}m`;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    // ----------------- START -----------------
+    window.onload = () => {
+      initThree();
+      applyPyramidColorAndBrightness();
+      setupColorBrightnessUI();
+      setupSimulationUI();
+      setupMediaPipe();
+      lucide.createIcons();
+      animate();
+    };
+
+  </script>
+</body>
+</html>
