@@ -10,7 +10,7 @@ import {
   getEdgeFlowInnerIntensity
 } from '../ui/edgeFlowControls.js';
 import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
-import { getMotionParticleVertexOpacity } from '../utils/motionParticleSettings.js';
+import { getFootEmissiveIntensity } from '../ui/footControls.js';
 
 const DURATION = 1.35;
 const WIREFRAME_BLOOM_RATIO = 0.38;
@@ -77,9 +77,9 @@ function setGlowVisualWeight(w) {
     }
   };
 
-  applyPhysical(mats.solid, 1, BASE_EMISSIVE.solid);
+  applyPhysical(mats.solid, 1, getFootEmissiveIntensity());
   applyPhysical(mats.shell, 0.42, BASE_EMISSIVE.shell);
-  applyPhysical(mats.base, 1, BASE_EMISSIVE.base);
+  applyPhysical(mats.base, 1, getFootEmissiveIntensity());
   if (mats.axis) {
     mats.axis.transparent = fading;
     mats.axis.opacity = weight;

@@ -17,7 +17,7 @@ import {
   restoreGlowObjectVisibility
 } from './glowWireframeTransition.js';
 import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
-import { getMotionParticleVertexOpacity } from '../utils/motionParticleSettings.js';
+import { getFootEmissiveIntensity } from '../ui/footControls.js';
 
 // 显影 → 凝聚 → 定型
 const DURATION = 2.1;
@@ -147,8 +147,8 @@ function setGlowMaterializeWeight(progress) {
     }
   };
 
-  applyPhysical(mats.solid, 1, BASE_EMISSIVE.solid, coreT);
-  applyPhysical(mats.base, 1, BASE_EMISSIVE.base, coreT);
+  applyPhysical(mats.solid, 1, getFootEmissiveIntensity(), coreT);
+  applyPhysical(mats.base, 1, getFootEmissiveIntensity(), coreT);
   if (mats.axis) {
     mats.axis.transparent = coreT < 0.999;
     mats.axis.opacity = coreT;

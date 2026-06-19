@@ -45,6 +45,60 @@
       </div>
     </section>
 
+    <section class="panel-section" data-section="foot">
+      <button type="button" class="panel-section-header" aria-expanded="false">
+        <span class="panel-section-title">底部金属</span>
+        <span class="panel-section-chevron" aria-hidden="true"></span>
+      </button>
+      <div class="panel-section-body">
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>金属颜色</span>
+            <span id="foot-color-hex-label">#DDB873</span>
+          </div>
+          <div class="color-row">
+            <input id="foot-color-picker" type="color" value="#DDB873">
+            <div id="foot-color-preview" style="background: #DDB873"></div>
+          </div>
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>颜色亮度</span>
+            <span id="foot-color-brightness-val">100%</span>
+          </div>
+          <input id="foot-color-brightness-slider" class="panel-slider" type="range" min="50" max="200" value="100">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>金属度</span>
+            <span id="foot-metalness-val">90%</span>
+          </div>
+          <input id="foot-metalness-slider" class="panel-slider" type="range" min="0" max="100" value="90">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>粗糙度</span>
+            <span id="foot-roughness-val">15%</span>
+          </div>
+          <input id="foot-roughness-slider" class="panel-slider" type="range" min="0" max="100" value="15">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>自发光强度</span>
+            <span id="foot-emissive-val">58%</span>
+          </div>
+          <input id="foot-emissive-slider" class="panel-slider" type="range" min="0" max="300" value="58">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>清漆层</span>
+            <span id="foot-clearcoat-val">80%</span>
+          </div>
+          <input id="foot-clearcoat-slider" class="panel-slider" type="range" min="0" max="100" value="80">
+        </div>
+      </div>
+    </section>
+
     <section class="panel-section is-open" data-section="edge-flow">
       <button type="button" class="panel-section-header" aria-expanded="true">
         <span class="panel-section-title">棱边流光</span>

@@ -6,6 +6,7 @@ import {
 import { state } from '../state/appState.js';
 import { applyPyramidColorAndBrightness } from '../ui/pyramidControls.js';
 import { applyAxisMaterial } from '../ui/axisControls.js';
+import { getFootEmissiveIntensity } from '../ui/footControls.js';
 import {
   getEdgeFlowOpacity,
   getEdgeFlowOuterIntensity,
@@ -202,9 +203,6 @@ function hidePyramidContent() {
   });
   if (mats.vertex) mats.vertex.opacity = 0;
 
-  state.baseCornerMarkers.forEach((marker) => {
-    marker.element.style.opacity = '0';
-  });
 }
 
 function softReveal(t) {
@@ -236,25 +234,12 @@ function applyPhysicalReveal(mat, baseOpacity, emissiveScale, weight) {
   }
 }
 
-function updateCornerMarkers(elapsed) {
-  const markers = state.baseCornerMarkers;
-  if (!markers.length) return;
-
-  const segStarts = CONTOUR_VERTEX_PATH.map((_, i) => i * (CONTOUR_SEGMENT_DURATION - CONTOUR_SEGMENT_OVERLAP));
-
-  markers[0].element.style.opacity = elapsed > segStarts[0] ? '1' : '0';
-  markers[2].element.style.opacity = elapsed > segStarts[0] + CONTOUR_SEGMENT_DURATION * 0.85 ? '1' : '0';
-  markers[1].element.style.opacity = elapsed > segStarts[1] + CONTOUR_SEGMENT_DURATION * 0.85 ? '1' : '0';
-}
-
 function updateBaseLines(elapsed, reveal) {
   reveal.segments.forEach((segment, index) => {
     const segStart = index * (CONTOUR_SEGMENT_DURATION - CONTOUR_SEGMENT_OVERLAP);
     const progress = smootherstep(clamp01((elapsed - segStart) / CONTOUR_SEGMENT_DURATION));
     setLineProgress(segment, progress);
   });
-
-  updateCornerMarkers(elapsed);
 
   const contourProgress = getContourDrawProgress(elapsed, state.pyramidBaseVerts);
   reveal.contourProgress = contourProgress;
@@ -290,8 +275,8 @@ function updateBaseSolid(elapsed, reveal) {
 
   if (baseMesh) baseMesh.visible = baseW > 0.008;
   if (bottomMesh) bottomMesh.visible = solidW > 0.008;
-  applyPhysicalRevealSoft(mats.base, 1, BASE_EMISSIVE.base, baseW);
-  applyPhysicalRevealSoft(mats.solid, 1, BASE_EMISSIVE.solid, solidW);
+  applyPhysicalRevealSoft(mats.base, 1, getFootEmissiveIntensity(), baseW);
+  applyPhysicalRevealSoft(mats.solid, 1, getFootEmissiveIntensity(), solidW);
 }
 
 function updateShellEdges(elapsed) {
@@ -432,10 +417,6 @@ function finishInitialReveal(reveal) {
   if (state.pyramidGroups.flow) state.pyramidGroups.flow.visible = true;
   applyPyramidColorAndBrightness();
   applyAxisMaterial();
-
-  state.baseCornerMarkers.forEach((marker) => {
-    marker.element.style.opacity = '1';
-  });
 
   if (state.bloomPass) {
     state.bloomPass.strength = BASE_BLOOM_STRENGTH * state.pyramidBrightness;

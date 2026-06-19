@@ -11,24 +11,6 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
   pointer-events: none;
   user-select: none;
 }
-.base-corner-marker {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(232, 204, 160, 0.75);
-  background: rgba(12, 12, 16, 0.82);
-  color: #E8CCA0;
-  font-size: 14px;
-  font-weight: 700;
-  font-family: Consolas, "Courier New", monospace;
-  line-height: 1;
-  box-shadow: 0 0 10px rgba(232, 204, 160, 0.35);
-  pointer-events: none;
-  user-select: none;
-}
 #control-panel {
   position: absolute;
   top: 16px;

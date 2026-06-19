@@ -25,6 +25,18 @@ export const DEFAULT_AXIS_SETTINGS = {
   lightIntensity: 2.8
 };
 
+/** 底部实心段（solid）与底面盖板（base）共用材质参数 */
+export const DEFAULT_FOOT_SETTINGS = {
+  color: '#DDB873',
+  colorBrightness: 1,
+  emissiveStrength: 0.25,
+  emissiveIntensity: 0.575,
+  metalness: 0.9,
+  roughness: 0.15,
+  clearcoat: 0.8,
+  clearcoatRoughness: 0.1
+};
+
 export const DEFAULT_SLICE_OPACITY = {
   opacityCenter: 0.25,
   opacityEdge: 0.95,

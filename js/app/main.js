@@ -9,6 +9,7 @@ import { setupCameraInfoPopup } from '../ui/cameraInfoPopup.js';
 import { setupPostProcessing, updateFxaaResolution } from '../postprocessing/setup.js';
 import { applyPyramidColorAndBrightness, setupColorBrightnessUI } from '../ui/pyramidControls.js';
 import { applyAxisMaterial, setupAxisUI } from '../ui/axisControls.js';
+import { applyFootMaterial, setupFootUI } from '../ui/footControls.js';
 import { setupSliceGradientUI } from '../ui/sliceControls.js';
 import { setupEdgeFlowUI } from '../ui/edgeFlowControls.js';
 import { setupMotionParticleUI } from '../ui/motionParticleControls.js';
@@ -54,7 +55,7 @@ function animate() {
   updateParticleGlowTransition();
   updateInitialReveal();
   state.composer.render();
-  if (SHOW_LABELS || state.baseCornerMarkers.length) {
+  if (SHOW_LABELS) {
     state.labelRenderer.render(state.scene, state.camera);
   }
 }
@@ -96,6 +97,7 @@ function init() {
   setupMotionParticleUI();
   setupGridUI();
   setupAxisUI();
+  setupFootUI();
   setupSliceGradientUI();
   setupEffectUI();
   setupGlowWireTransitionUI();
@@ -103,6 +105,7 @@ function init() {
   setupParticleGlowTransitionUI();
   applyPyramidColorAndBrightness();
   applyAxisMaterial();
+  applyFootMaterial();
 
   state.clock = new THREE.Clock();
   startInitialReveal();

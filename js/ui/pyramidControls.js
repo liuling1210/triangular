@@ -9,6 +9,7 @@ import {
   getMotionGoldWeightForMode
 } from '../utils/motionParticleColors.js';
 import { applyEdgeFlowAppearance } from './edgeFlowControls.js';
+import { applyFootMaterial } from './footControls.js';
 import { applyMotionParticleAppearance } from './motionParticleControls.js';
 import { applySliceGradients } from './sliceControls.js';
 
@@ -18,21 +19,12 @@ export function applyPyramidColorAndBrightness() {
   const emissiveColor = threeColor.clone().multiplyScalar(0.25);
   const { pyramidMats, pyramidLights } = state;
 
-  if (pyramidMats.solid) {
-    pyramidMats.solid.color.copy(threeColor);
-    pyramidMats.solid.emissive.copy(emissiveColor);
-    pyramidMats.solid.emissiveIntensity = BASE_EMISSIVE.solid * state.pyramidBrightness;
-  }
   if (pyramidMats.shell) {
     pyramidMats.shell.color.copy(shellColor);
     pyramidMats.shell.emissive.copy(emissiveColor.clone().multiplyScalar(0.4));
     pyramidMats.shell.emissiveIntensity = BASE_EMISSIVE.shell * state.pyramidBrightness;
   }
-  if (pyramidMats.base) {
-    pyramidMats.base.color.copy(threeColor);
-    pyramidMats.base.emissive.copy(emissiveColor);
-    pyramidMats.base.emissiveIntensity = BASE_EMISSIVE.base * state.pyramidBrightness;
-  }
+  applyFootMaterial();
   applyEdgeFlowAppearance();
   applySliceGradients();
   applyMotionParticleAppearance(
