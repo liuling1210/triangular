@@ -34,6 +34,7 @@ export const state = {
   bloomPass: null,
   fxaaPass: null,
   labelElements: [],
+  baseCornerMarkers: [],
   clock: null,
   pyramidApex: null,
   pyramidBaseVerts: null,
@@ -52,5 +53,6 @@ export const state = {
   controls: null,
   composer: null,
   effectTransition: null,
+  cameraViewTransition: null,
   initialReveal: null
 };

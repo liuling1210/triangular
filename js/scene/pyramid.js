@@ -29,6 +29,7 @@ import { createGradientSliceMaterial } from '../materials/sliceMaterial.js';
 import { createWireframePyramid } from './wireframePyramid.js';
 import { createParticlePyramid } from './particlePyramid.js';
 import { createEdgeGlowTubes } from './edgeGlowTubes.js';
+import { createBaseCornerMarkers } from './baseCornerMarkers.js';
 import { getMotionParticleRiseSpeed, getMotionParticleCountMultiplier } from '../utils/motionParticleSettings.js';
 
 function encodeParticleStream(x, y, z, phase) {
@@ -164,6 +165,7 @@ export function createPyramid() {
   const { apex, baseVerts } = extractPyramidKeyPoints(coneGeo);
   state.pyramidApex = apex;
   state.pyramidBaseVerts = baseVerts.map((v) => v.clone());
+  createBaseCornerMarkers(baseVerts);
   const sliceHeights = [H / 3, (2 * H) / 3];
   state.pyramidSliceHeights = sliceHeights;
 

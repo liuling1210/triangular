@@ -11,6 +11,24 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
   pointer-events: none;
   user-select: none;
 }
+.base-corner-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(232, 204, 160, 0.75);
+  background: rgba(12, 12, 16, 0.82);
+  color: #E8CCA0;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: Consolas, "Courier New", monospace;
+  line-height: 1;
+  box-shadow: 0 0 10px rgba(232, 204, 160, 0.35);
+  pointer-events: none;
+  user-select: none;
+}
 #control-panel {
   position: absolute;
   top: 16px;
@@ -177,6 +195,14 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
   background: transparent;
   cursor: pointer;
 }
+#control-panel .slice-color-hex {
+  font-size: 11px;
+  color: #E8CCA0;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  min-width: 58px;
+  flex-shrink: 0;
+}
 #control-panel .gradient-preview {
   flex: 1;
   height: 28px;
@@ -234,6 +260,12 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
   flex-direction: column;
   gap: 8px;
 }
+.view-btn-group {
+  margin-bottom: 18px;
+}
+#effect-panel h2 + h2 {
+  margin-top: 4px;
+}
 .effect-btn {
   width: 100%;
   padding: 10px 14px;
@@ -256,6 +288,10 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
   border-color: rgba(232, 204, 160, 0.55);
   color: #E8CCA0;
   font-weight: 600;
+}
+.effect-btn.is-busy {
+  opacity: 0.65;
+  pointer-events: none;
 }
 .effect-btn-transition {
   border-style: dashed;

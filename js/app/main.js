@@ -6,6 +6,7 @@ import { createLabels } from '../scene/labels.js';
 import { setupLights } from '../scene/lights.js';
 import { setupControls } from '../scene/controls.js';
 import { setupCameraInfoPopup } from '../ui/cameraInfoPopup.js';
+import { setupCameraViewUI, updateCameraViewTransition } from '../ui/cameraViewControls.js';
 import { setupPostProcessing, updateFxaaResolution } from '../postprocessing/setup.js';
 import { applyPyramidColorAndBrightness, setupColorBrightnessUI } from '../ui/pyramidControls.js';
 import { applyAxisMaterial, setupAxisUI } from '../ui/axisControls.js';
@@ -44,7 +45,10 @@ function onWindowResize() {
 
 function animate() {
   requestAnimationFrame(animate);
-  state.controls.update();
+  updateCameraViewTransition();
+  if (!state.cameraViewTransition) {
+    state.controls.update();
+  }
   const elapsed = advanceParticleFlowClock(1);
   updateParticleFlow(elapsed);
   if (state.clock) {
@@ -55,7 +59,7 @@ function animate() {
   updateParticleGlowTransition();
   updateInitialReveal();
   state.composer.render();
-  if (SHOW_LABELS) {
+  if (SHOW_LABELS || state.baseCornerMarkers.length) {
     state.labelRenderer.render(state.scene, state.camera);
   }
 }
@@ -91,6 +95,7 @@ function init() {
   setupPostProcessing();
   setupControls();
   setupCameraInfoPopup();
+  setupCameraViewUI();
   setupPanelSections();
   setupColorBrightnessUI(applyAxisMaterial);
   setupEdgeFlowUI();

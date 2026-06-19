@@ -4,6 +4,13 @@ export const INITIAL_CAMERA = {
   alignVertex1ToTop: true
 };
 
+/** 正视视角 */
+export const FRONT_VIEW_CAMERA = {
+  position: { x: 6.074, y: 2.37, z: 3.565 },
+  target: { x: 0.052, y: 0.86, z: -0.078 },
+  azimuth: 1.027
+};
+
 export const DEFAULT_PYRAMID_COLOR = '#DDB873';
 export const SHOW_LABELS = false;
 export const DEFAULT_BRIGHTNESS = 0.67;

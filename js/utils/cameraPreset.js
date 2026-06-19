@@ -33,24 +33,37 @@ function applyTopDownOrientation(camera, target, azimuth) {
   camera.lookAt(target.x, target.y, target.z);
 }
 
-export function applyCameraPreset(camera, preset, controls = null, baseVerts = null) {
+export function getPresetCameraState(preset, baseVerts = null) {
   const target = new THREE.Vector3(preset.target.x, preset.target.y, preset.target.z);
-  camera.position.set(preset.position.x, preset.position.y, preset.position.z);
-
-  if (controls) {
-    controls.target.copy(target);
-  }
-
-  const topDown = isTopDownView(camera.position, target);
+  const position = new THREE.Vector3(preset.position.x, preset.position.y, preset.position.z);
+  const topDown = isTopDownView(position, target);
   let azimuth = preset.azimuth;
+  const up = new THREE.Vector3();
 
   if (topDown) {
     if (azimuth == null && preset.alignVertex1ToTop && baseVerts?.length) {
       azimuth = computeVertex1TopAzimuth(baseVerts);
     }
-    applyTopDownOrientation(camera, target, azimuth ?? 0);
+    up.set(Math.sin(azimuth ?? 0), 0, -Math.cos(azimuth ?? 0)).normalize();
   } else {
-    camera.up.set(0, 1, 0);
+    up.set(0, 1, 0);
+  }
+
+  return { position, target, up, topDown, azimuth: azimuth ?? 0 };
+}
+
+export function applyCameraPreset(camera, preset, controls = null, baseVerts = null) {
+  const { position, target, up, topDown, azimuth } = getPresetCameraState(preset, baseVerts);
+  camera.position.copy(position);
+
+  if (controls) {
+    controls.target.copy(target);
+  }
+
+  if (topDown) {
+    applyTopDownOrientation(camera, target, azimuth);
+  } else {
+    camera.up.copy(up);
     camera.lookAt(target);
   }
 

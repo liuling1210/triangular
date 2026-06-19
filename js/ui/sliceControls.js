@@ -44,6 +44,13 @@ function updateSliceGradientPreviews() {
       const innerStop = Math.max(0, (1 - state.sliceOpacity.fadeRange) * 100);
       preview.style.background = `radial-gradient(circle, ${hexToRgba(grad.start, state.sliceOpacity.opacityCenter)} ${innerStop}%, ${hexToRgba(grad.end, state.sliceOpacity.opacityEdge)} 100%)`;
     }
+
+    document.querySelectorAll(`.slice-color-hex[data-slice="${i}"]`).forEach((el) => {
+      const role = el.dataset.role;
+      if (grad[role]) {
+        el.textContent = grad[role].toUpperCase();
+      }
+    });
   });
 
   const centerLabel = document.getElementById('slice-opacity-center-val');

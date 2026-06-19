@@ -320,11 +320,13 @@
           <div class="gradient-row">
             <label>中心</label>
             <input class="slice-color-picker" type="color" data-slice="0" data-role="start" value="#383838">
+            <span class="slice-color-hex" data-slice="0" data-role="start">#383838</span>
             <div class="gradient-preview" data-slice="0"></div>
           </div>
           <div class="gradient-row">
             <label>边缘</label>
             <input class="slice-color-picker" type="color" data-slice="0" data-role="end" value="#C2B85B">
+            <span class="slice-color-hex" data-slice="0" data-role="end">#C2B85B</span>
           </div>
         </div>
         <div class="slice-section" data-slice="1">
@@ -332,17 +334,24 @@
           <div class="gradient-row">
             <label>中心</label>
             <input class="slice-color-picker" type="color" data-slice="1" data-role="start" value="#323232">
+            <span class="slice-color-hex" data-slice="1" data-role="start">#323232</span>
             <div class="gradient-preview" data-slice="1"></div>
           </div>
           <div class="gradient-row">
             <label>边缘</label>
             <input class="slice-color-picker" type="color" data-slice="1" data-role="end" value="#C2B85B">
+            <span class="slice-color-hex" data-slice="1" data-role="end">#C2B85B</span>
           </div>
         </div>
       </div>
     </section>
   </div>
   <div id="effect-panel">
+    <h2>视角切换</h2>
+    <div class="effect-btn-group view-btn-group">
+      <button type="button" id="view-top-btn" class="effect-btn active">俯视</button>
+      <button type="button" id="view-front-btn" class="effect-btn">正视</button>
+    </div>
     <h2>三棱锥效果</h2>
     <div class="effect-btn-group">
       <button type="button" id="effect-glow-btn" class="effect-btn active" data-effect="glow">发光效果</button>
