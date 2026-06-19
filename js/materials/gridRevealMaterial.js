@@ -1,19 +1,37 @@
-import { GRID } from '../config/constants.js';
+import { GRID, GRID_MAX_RINGS, getGridRingRadii, syncGridDerivedSettings } from '../config/constants.js';
 import { state } from '../state/appState.js';
 
 const TAU = Math.PI * 2;
 
+function syncRingRadiusUniforms(material, settings) {
+  syncGridDerivedSettings(settings);
+  const radii = getGridRingRadii(settings);
+  const outer = radii[radii.length - 1] ?? settings.maxRadius;
+  const ringArray = material.uniforms.uRingRadii.value;
+
+  for (let i = 0; i < GRID_MAX_RINGS; i++) {
+    ringArray[i] = i < radii.length ? radii[i] : 0;
+  }
+
+  material.uniforms.uRingCount.value = radii.length;
+  material.uniforms.uOuterRingR.value = outer;
+  material.uniforms.uMaxRadius.value = outer;
+}
+
 export function createGridRevealMaterial(startAngle = 0) {
   const color = new THREE.Color(GRID.color);
+  const settings = state.gridSettings;
 
-  return new THREE.ShaderMaterial({
+  const material = new THREE.ShaderMaterial({
     uniforms: {
       uColor: { value: color },
-      uOpacity: { value: state.gridSettings.brightness },
-      uMaxRadius: { value: state.gridSettings.maxRadius },
-      uRingCount: { value: state.gridSettings.ringCount },
-      uRadialCount: { value: state.gridSettings.radialCount },
-      uLineWidth: { value: state.gridSettings.lineWidth },
+      uOpacity: { value: settings.brightness },
+      uMaxRadius: { value: settings.maxRadius },
+      uRingCount: { value: settings.ringCount },
+      uRingRadii: { value: new Float32Array(GRID_MAX_RINGS) },
+      uOuterRingR: { value: settings.maxRadius },
+      uRadialCount: { value: settings.radialCount },
+      uLineWidth: { value: settings.lineWidth },
       uOuterRingSweepAngle: { value: 0 },
       uInnerRevealRadius: { value: 0 },
       uStartAngle: { value: startAngle },
@@ -37,6 +55,8 @@ export function createGridRevealMaterial(startAngle = 0) {
       uniform float uOpacity;
       uniform float uMaxRadius;
       uniform float uRingCount;
+      uniform float uRingRadii[${GRID_MAX_RINGS}];
+      uniform float uOuterRingR;
       uniform float uRadialCount;
       uniform float uLineWidth;
       uniform float uOuterRingSweepAngle;
@@ -50,6 +70,7 @@ export function createGridRevealMaterial(startAngle = 0) {
 
       const float TAU = 6.28318530718;
       const float PI = 3.14159265359;
+      const int MAX_RINGS = ${GRID_MAX_RINGS};
 
       float angularDiff(float a, float b) {
         float d = abs(mod(a - b + PI, TAU) - PI);
@@ -75,37 +96,40 @@ export function createGridRevealMaterial(startAngle = 0) {
         float dashCoord = 0.0;
         float lineAlpha = 1.0;
 
-        float ringStep = uMaxRadius / uRingCount;
-        float ringR1 = ringStep;
-        float ringR2 = ringStep * 2.0;
-        float ringR3 = ringStep * 3.0;
-        float outerRingR = ringStep * uRingCount;
+        bool onOuterRing = abs(r - uOuterRingR) <= halfWidth;
 
-        bool onOuterRing = abs(r - outerRingR) <= halfWidth;
-        bool onRing1 = uRingCount >= 1.0 && abs(r - ringR1) <= halfWidth && ringR1 < outerRingR - 0.001;
-        bool onRing2 = uRingCount >= 2.0 && abs(r - ringR2) <= halfWidth && ringR2 < outerRingR - 0.001;
+        bool onInnerRing = false;
+        float hitRingR = 0.0;
+        for (int i = 0; i < MAX_RINGS; i++) {
+          if (float(i) >= uRingCount - 1.0) continue;
+          float ringR = uRingRadii[i];
+          if (ringR >= uOuterRingR - 0.001) continue;
+          if (abs(r - ringR) <= halfWidth) {
+            onInnerRing = true;
+            hitRingR = ringR;
+          }
+        }
 
         float radialStep = TAU / uRadialCount;
         float snapped = floor((worldAngle + radialStep * 0.5) / radialStep) * radialStep;
         float radialDiff = angularDiff(worldAngle, snapped);
-        bool onRadial = radialDiff <= halfWidth / max(r, 0.08) && r <= uMaxRadius && r < outerRingR - halfWidth;
+        bool onRadial = radialDiff <= halfWidth / max(r, 0.08) && r <= uMaxRadius && r < uOuterRingR - halfWidth;
 
         if (onOuterRing) {
           bool swept = inOuterSweep(angleCCW);
           if (!swept && uOuterRingSweepAngle <= 0.001) discard;
           onLine = 1.0;
           solidMix = swept ? 1.0 : 0.0;
-          dashCoord = angleCCW * max(outerRingR, 0.001);
-        } else if (onRing1 || onRing2 || onRadial) {
+          dashCoord = angleCCW * max(uOuterRingR, 0.001);
+        } else if (onInnerRing || onRadial) {
           if (uInnerRevealRadius <= 0.001) discard;
 
-          float ringR = onRing1 ? ringR1 : ringR2;
-          if (onRing1 || onRing2) {
-            float ringMask = smoothstep(ringR - halfWidth * 1.5, ringR + halfWidth * 0.5, uInnerRevealRadius);
+          if (onInnerRing) {
+            float ringMask = smoothstep(hitRingR - halfWidth * 1.5, hitRingR + halfWidth * 0.5, uInnerRevealRadius);
             if (ringMask <= 0.001) discard;
             onLine = 1.0;
             lineAlpha = ringMask;
-            dashCoord = angleCCW * max(ringR, 0.001);
+            dashCoord = angleCCW * max(hitRingR, 0.001);
           } else if (onRadial) {
             float radialMask = 1.0 - smoothstep(uInnerRevealRadius - halfWidth * 2.0, uInnerRevealRadius + halfWidth, r);
             if (radialMask <= 0.001) discard;
@@ -130,6 +154,8 @@ export function createGridRevealMaterial(startAngle = 0) {
     depthWrite: false,
     side: THREE.DoubleSide
   });
+  syncRingRadiusUniforms(material, settings);
+  return material;
 }
 
 export function getGridRevealStartAngle(baseVerts) {
@@ -141,11 +167,10 @@ export function getGridRevealStartAngle(baseVerts) {
 export function syncGridRevealUniforms(material) {
   if (!material?.uniforms) return;
   const s = state.gridSettings;
-  material.uniforms.uMaxRadius.value = s.maxRadius;
-  material.uniforms.uRingCount.value = s.ringCount;
   material.uniforms.uRadialCount.value = s.radialCount;
   material.uniforms.uLineWidth.value = s.lineWidth;
   material.uniforms.uOpacity.value = s.brightness;
+  syncRingRadiusUniforms(material, s);
 }
 
 export function setGridRevealOuterSweep(material, contourProgress) {
@@ -155,6 +180,7 @@ export function setGridRevealOuterSweep(material, contourProgress) {
 
 export function setGridRevealInnerRadius(material, innerProgress) {
   if (!material?.uniforms) return;
+  syncGridDerivedSettings(state.gridSettings);
   const maxR = state.gridSettings.maxRadius;
   material.uniforms.uInnerRevealRadius.value = clamp01(innerProgress) * maxR;
   if (clamp01(innerProgress) > 0.001) {

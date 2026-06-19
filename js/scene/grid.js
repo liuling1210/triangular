@@ -1,4 +1,4 @@
-import { GRID } from '../config/constants.js';
+import { GRID, getGridRingRadii, syncGridDerivedSettings } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import {
   createGridRevealMaterial,
@@ -81,13 +81,13 @@ function disposeGridReveal() {
 }
 
 function buildGridMeshes(group, settings) {
-  const { maxRadius, ringCount, radialCount, lineWidth } = settings;
+  const { maxRadius, radialCount, lineWidth } = settings;
   const material = state.gridMaterial;
+  const ringRadii = getGridRingRadii(settings);
 
-  for (let i = 1; i <= ringCount; i++) {
-    const radius = (maxRadius / ringCount) * i;
+  ringRadii.forEach((radius) => {
     group.add(createRingMesh(radius, lineWidth, material));
-  }
+  });
 
   for (let i = 0; i < radialCount; i++) {
     const angle = (i / radialCount) * Math.PI * 2;
@@ -110,6 +110,7 @@ export function setSolidGridVisible(visible) {
 
 export function createGridReveal(startAngle = 0) {
   disposeGridReveal();
+  syncGridDerivedSettings(state.gridSettings);
 
   const size = state.gridSettings.maxRadius * 2.4;
   const geometry = new THREE.PlaneGeometry(size, size, 1, 1);
@@ -182,6 +183,7 @@ export function finishGridReveal() {
 
 export function rebuildCircularGrid() {
   if (!state.scene) return;
+  syncGridDerivedSettings(state.gridSettings);
 
   disposeGridGroup();
 

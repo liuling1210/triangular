@@ -14,6 +14,8 @@ export function createEdgeFlowMaterial(isCore, phase = 0) {
       uBandWidth: { value: settings.bandWidth },
       uIntensity: { value: 1 },
       uOpacity: { value: settings.opacity },
+      uEndFadeBottom: { value: settings.endFadeBottom },
+      uEndFadeTop: { value: settings.endFadeTop },
       uCore: { value: isCore ? 1 : 0 }
     },
     vertexShader: `
@@ -32,11 +34,15 @@ export function createEdgeFlowMaterial(isCore, phase = 0) {
       uniform float uBandWidth;
       uniform float uIntensity;
       uniform float uOpacity;
+      uniform float uEndFadeBottom;
+      uniform float uEndFadeTop;
       uniform float uCore;
       varying vec2 vUv;
 
       void main() {
         float along = vUv.x;
+        float endFade = smoothstep(0.0, uEndFadeBottom, along)
+          * smoothstep(1.0, 1.0 - uEndFadeTop, along);
         float radialDist = abs(vUv.y - 0.5) * 2.0;
         float radial = 1.0 - smoothstep(0.0, 1.0, radialDist);
         radial = pow(radial, uCore > 0.5 ? 2.4 : 1.75);
@@ -65,6 +71,8 @@ export function createEdgeFlowMaterial(isCore, phase = 0) {
           alpha = (0.12 + flow * 0.88) * radial * uOpacity;
         }
 
+        col *= endFade;
+        alpha *= endFade;
         gl_FragColor = vec4(col, alpha);
       }
     `,
@@ -103,5 +111,7 @@ export function applyEdgeFlowUniforms(materials) {
   list.forEach((material) => {
     material.uniforms.uSpeed.value = settings.speed;
     material.uniforms.uBandWidth.value = settings.bandWidth;
+    material.uniforms.uEndFadeBottom.value = settings.endFadeBottom;
+    material.uniforms.uEndFadeTop.value = settings.endFadeTop;
   });
 }

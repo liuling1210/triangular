@@ -18,6 +18,7 @@ import {
 } from './glowWireframeTransition.js';
 import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
 import { getFootEmissiveIntensity } from '../ui/footControls.js';
+import { getMotionParticleVertexOpacity } from '../utils/motionParticleSettings.js';
 
 // 显影 → 凝聚 → 定型
 const DURATION = 2.1;

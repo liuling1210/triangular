@@ -10,7 +10,8 @@ import {
   SHAFT_RADIUS,
   SHAFT_CYL_HEIGHT,
   SHAFT_TIP_HEIGHT,
-  SOLID_BOTTOM_HEIGHT
+  SOLID_BOTTOM_HEIGHT,
+  SOLID_CAP_HEIGHT
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import { createGlowTexture } from '../utils/color.js';
@@ -148,6 +149,9 @@ export function createPyramid() {
     vertexPoints: null,
     internalPoints: null,
     axisShaft: null,
+    solidFrustum: null,
+    solidBottomCap: null,
+    solidTopCap: null,
     slicePlanes: [],
     sliceEdgeLines: [],
     sliceInnerEdgeLines: [],
@@ -170,6 +174,22 @@ export function createPyramid() {
   state.pyramidSliceHeights = sliceHeights;
 
   const bottomR = radiusAtHeight(SOLID_BOTTOM_HEIGHT);
+  const capInset = SOLID_CAP_HEIGHT / 2;
+  const bottomCapGeo = new THREE.CylinderGeometry(R, R, SOLID_CAP_HEIGHT, 3);
+  const topCapGeo = new THREE.CylinderGeometry(bottomR, bottomR, SOLID_CAP_HEIGHT, 3);
+  const baseMat = new THREE.MeshPhysicalMaterial({
+    color: DEFAULT_PYRAMID_COLOR,
+    metalness: 0.95,
+    roughness: 0.1,
+    emissive: 0x4a3210,
+    emissiveIntensity: BASE_EMISSIVE.base,
+    side: THREE.FrontSide,
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1
+  });
+  state.pyramidMats.base = baseMat;
+
   const bottomFrustumGeo = new THREE.CylinderGeometry(bottomR, R, SOLID_BOTTOM_HEIGHT, 3, 1, true);
   const solidGoldMat = new THREE.MeshPhysicalMaterial({
     color: DEFAULT_PYRAMID_COLOR,
@@ -186,7 +206,22 @@ export function createPyramid() {
   bottomMesh.position.y = SOLID_BOTTOM_HEIGHT / 2;
   bottomMesh.renderOrder = RENDER_ORDER.solid;
   glowGroup.add(bottomMesh);
+  state.glowObjects.solidFrustum = bottomMesh;
   state.glowObjects.meshes.push(bottomMesh);
+
+  const bottomCap = new THREE.Mesh(bottomCapGeo, baseMat);
+  bottomCap.position.y = -capInset;
+  bottomCap.renderOrder = RENDER_ORDER.base;
+  glowGroup.add(bottomCap);
+  state.glowObjects.solidBottomCap = bottomCap;
+  state.glowObjects.meshes.push(bottomCap);
+
+  const topCap = new THREE.Mesh(topCapGeo, baseMat);
+  topCap.position.y = SOLID_BOTTOM_HEIGHT - capInset;
+  topCap.renderOrder = RENDER_ORDER.base;
+  glowGroup.add(topCap);
+  state.glowObjects.solidTopCap = topCap;
+  state.glowObjects.meshes.push(topCap);
 
   const shellHeight = H - SOLID_BOTTOM_HEIGHT;
   const shellBottomR = radiusAtHeight(SOLID_BOTTOM_HEIGHT);
@@ -267,25 +302,6 @@ export function createPyramid() {
     glowGroup.add(innerEdge);
     state.glowObjects.sliceInnerEdgeLines.push(innerEdge);
   });
-
-  const baseGeo = new THREE.CylinderGeometry(R, R, 0.04, 3);
-  const baseMat = new THREE.MeshPhysicalMaterial({
-    color: DEFAULT_PYRAMID_COLOR,
-    metalness: 0.95,
-    roughness: 0.1,
-    emissive: 0x4a3210,
-    emissiveIntensity: BASE_EMISSIVE.base,
-    side: THREE.FrontSide,
-    polygonOffset: true,
-    polygonOffsetFactor: 1,
-    polygonOffsetUnits: 1
-  });
-  state.pyramidMats.base = baseMat;
-  const baseMesh = new THREE.Mesh(baseGeo, baseMat);
-  baseMesh.position.y = -0.02;
-  baseMesh.renderOrder = RENDER_ORDER.base;
-  glowGroup.add(baseMesh);
-  state.glowObjects.meshes.push(baseMesh);
 
   const axisMat = new THREE.MeshPhysicalMaterial({
     color: DEFAULT_AXIS_SETTINGS.color,

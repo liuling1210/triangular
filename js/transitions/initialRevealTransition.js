@@ -33,14 +33,25 @@ const LINE_SAMPLE_COUNT = 72;
 const REVEAL_LINE_OPACITY = 0.98;
 const SETTLE_DURATION = 0.5;
 
-/** 六幕时间轴（秒） */
+/** 外壳与内部网格同步绘制，随后中轴 → 切片 → 粒子 */
+const SHELL_GRID_START = 2.4;
+const SHELL_GRID_DURATION = 1.4;
+const AXIS_DURATION = 1.0;
+const SLICES_DURATION = 1.8;
+const PARTICLES_DURATION = 1.5;
+
+const shellGridEnd = SHELL_GRID_START + SHELL_GRID_DURATION;
+const axisEnd = shellGridEnd + AXIS_DURATION;
+const slicesEnd = axisEnd + SLICES_DURATION;
+
 const TIMELINE = {
   baseLines: { start: 0, duration: 2.0 },
   baseSolid: { start: 1.6, duration: 1.35 },
-  shellEdges: { start: 2.4, duration: 1.4 },
-  axis: { start: 3.2, duration: 1.0 },
-  slices: { start: 4.1, duration: 1.8 },
-  particles: { start: 5.6, duration: 1.5 }
+  shellEdges: { start: SHELL_GRID_START, duration: SHELL_GRID_DURATION },
+  gridInner: { start: SHELL_GRID_START, duration: SHELL_GRID_DURATION },
+  axis: { start: shellGridEnd, duration: AXIS_DURATION },
+  slices: { start: axisEnd, duration: SLICES_DURATION },
+  particles: { start: slicesEnd, duration: PARTICLES_DURATION }
 };
 
 const CONTOUR_SEGMENT_DURATION = 0.58;
@@ -278,10 +289,12 @@ function updateBaseSolid(elapsed, reveal) {
 
   const objects = state.glowObjects;
   const mats = state.pyramidMats;
-  const baseMesh = objects.meshes[4];
-  const bottomMesh = objects.meshes[0];
+  const bottomCap = objects.solidBottomCap;
+  const topCap = objects.solidTopCap;
+  const bottomMesh = objects.solidFrustum;
 
-  if (baseMesh) baseMesh.visible = baseW > 0.008;
+  if (bottomCap) bottomCap.visible = baseW > 0.008;
+  if (topCap) topCap.visible = baseW > 0.008;
   if (bottomMesh) bottomMesh.visible = solidW > 0.008;
   applyPhysicalRevealSoft(mats.base, 1, getFootEmissiveIntensity(), baseW);
   applyPhysicalRevealSoft(mats.solid, 1, getFootEmissiveIntensity(), solidW);
@@ -294,7 +307,7 @@ function updateShellEdges(elapsed) {
 
   const objects = state.glowObjects;
   const mats = state.pyramidMats;
-  const shellMesh = objects.meshes[1];
+  const shellMesh = objects.meshes[3];
 
   if (shellMesh) shellMesh.visible = shellW > 0.01;
   applyPhysicalReveal(mats.shell, 0.42, BASE_EMISSIVE.shell, shellW);
@@ -325,8 +338,8 @@ function updateAxis(elapsed) {
   axisShaft.visible = w > 0.01;
   axisShaft.scale.y = Math.max(w, 0.001);
 
-  const cylMesh = objects.meshes[5];
-  const tipMesh = objects.meshes[6];
+  const cylMesh = objects.meshes[6];
+  const tipMesh = objects.meshes[7];
   if (cylMesh) cylMesh.visible = w > 0.01;
   if (tipMesh) tipMesh.visible = w > 0.01;
 
@@ -365,12 +378,9 @@ function updateSliceLayer(elapsed, sliceIndex) {
   if (innerLine) innerLine.visible = edgeW > 0.04;
 }
 
-function updateSlices(elapsed, reveal) {
-  updateSliceLayer(elapsed, 0);
-  updateSliceLayer(elapsed, 1);
-
+function updateGridInner(elapsed, reveal) {
   const innerT = smootherstep(
-    clamp01((elapsed - TIMELINE.slices.start) / TIMELINE.slices.duration)
+    clamp01((elapsed - TIMELINE.gridInner.start) / TIMELINE.gridInner.duration)
   );
   let gridCrossfadeElapsed = null;
   if (innerT >= 0.999) {
@@ -380,6 +390,11 @@ function updateSlices(elapsed, reveal) {
     gridCrossfadeElapsed = elapsed - reveal.gridCrossfadeStart;
   }
   updateGridRevealInner(innerT, gridCrossfadeElapsed);
+}
+
+function updateSlices(elapsed) {
+  updateSliceLayer(elapsed, 0);
+  updateSliceLayer(elapsed, 1);
 }
 
 function updateParticles(elapsed) {
@@ -500,11 +515,14 @@ export function updateInitialReveal() {
   if (elapsed >= TIMELINE.shellEdges.start) {
     updateShellEdges(elapsed);
   }
+  if (elapsed >= TIMELINE.gridInner.start) {
+    updateGridInner(elapsed, reveal);
+  }
   if (elapsed >= TIMELINE.axis.start) {
     updateAxis(elapsed);
   }
   if (elapsed >= TIMELINE.slices.start) {
-    updateSlices(elapsed, reveal);
+    updateSlices(elapsed);
   }
   if (elapsed >= TIMELINE.particles.start) {
     updateParticles(elapsed);

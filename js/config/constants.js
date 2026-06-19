@@ -73,7 +73,11 @@ export const EDGE_FLOW = {
   tubularSegments: 96,
   radialSegments: 8,
   speed: 0.32,
-  baseOpacity: 0.95
+  baseOpacity: 0.95,
+  endFadeBottom: 0.11,
+  endFadeTop: 0.06,
+  bottomInsetRatio: 0.035,
+  topInsetRatio: 0.02
 };
 
 export const DEFAULT_EDGE_FLOW_SETTINGS = {
@@ -83,7 +87,11 @@ export const DEFAULT_EDGE_FLOW_SETTINGS = {
   innerIntensityRatio: 1.15,
   bandWidth: 0.12,
   outerRadius: EDGE_FLOW.outerRadius,
-  innerRadius: EDGE_FLOW.innerRadius
+  innerRadius: EDGE_FLOW.innerRadius,
+  endFadeBottom: EDGE_FLOW.endFadeBottom,
+  endFadeTop: EDGE_FLOW.endFadeTop,
+  bottomInsetRatio: EDGE_FLOW.bottomInsetRatio,
+  topInsetRatio: EDGE_FLOW.topInsetRatio
 };
 
 export const PARTICLE_RISE_SPEED = 0.18;
@@ -105,6 +113,7 @@ export const MOTION_PARTICLE_BASE_COUNTS = {
   face: 200
 };
 export const SOLID_BOTTOM_HEIGHT = 0.1;
+export const SOLID_CAP_HEIGHT = 0.04;
 export const R = 2.0;
 export const H = 3.0;
 export const PYRAMID_EFFECT_MODES = { GLOW: 'glow', WIREFRAME: 'wireframe', PARTICLES: 'particles' };
@@ -114,19 +123,51 @@ export const SHAFT_CYL_HEIGHT = H - 0.2;
 export const SHAFT_TIP_HEIGHT = 0.2;
 export const PYRAMID_Y_OFFSET = H / 2;
 
+export const GRID_MAX_RINGS = 8;
+
 export const GRID = {
-  maxRadius: 3,
-  ringCount: 3,
-  radialCount: 12,
-  lineWidth: 0.011,
-  brightness: 0.29,
+  ringStep: 0.5,
+  ringRadiusScale: 1.43,
+  ringCount: 4,
+  minRingCount: 2,
+  maxRingCount: 6,
+  maxRadius: 2.715,
+  radialCount: 24,
+  lineWidth: 0.006,
+  brightness: 0.31,
   color: 0x888888,
   y: -0.045
 };
 
+/** 以三棱锥底面外接圆 R 为锚点，向内/外等距生成圈层 */
+export function computeGridRingRadii(ringCount, radiusScale, step = GRID.ringStep) {
+  const scaledStep = step * radiusScale;
+  const pyramidRingIdx = Math.max(0, ringCount - 2);
+  return Array.from({ length: ringCount }, (_, i) => {
+    const radius = R + (i - pyramidRingIdx) * scaledStep;
+    return Math.max(radius, scaledStep * 0.25);
+  });
+}
+
+export function getGridRingRadii(settings) {
+  const count = settings.ringCount ?? GRID.ringCount;
+  const scale = settings.ringRadiusScale ?? GRID.ringRadiusScale;
+  const step = settings.ringStep ?? GRID.ringStep;
+  return computeGridRingRadii(count, scale, step);
+}
+
+export function syncGridDerivedSettings(settings) {
+  const radii = getGridRingRadii(settings);
+  settings.maxRadius = radii[radii.length - 1];
+  settings.ringCount = radii.length;
+  return radii;
+}
+
 export const DEFAULT_GRID_SETTINGS = {
-  maxRadius: GRID.maxRadius,
+  ringStep: GRID.ringStep,
+  ringRadiusScale: GRID.ringRadiusScale,
   ringCount: GRID.ringCount,
+  maxRadius: GRID.maxRadius,
   radialCount: GRID.radialCount,
   lineWidth: GRID.lineWidth,
   brightness: GRID.brightness

@@ -19,6 +19,18 @@ function collectPhases(existing) {
   return existing.outerMats.map((mat) => mat.uniforms.uPhase.value);
 }
 
+function createInsetEdgeCurve(baseVert, apex) {
+  const settings = state.edgeFlowSettings;
+  const start = baseVert.clone();
+  const end = apex.clone();
+  const edgeDir = new THREE.Vector3().subVectors(end, start);
+  const edgeLen = edgeDir.length();
+  edgeDir.multiplyScalar(1 / edgeLen);
+  const curveStart = start.addScaledVector(edgeDir, edgeLen * settings.bottomInsetRatio);
+  const curveEnd = end.addScaledVector(edgeDir, -edgeLen * settings.topInsetRatio);
+  return new THREE.LineCurve3(curveStart, curveEnd);
+}
+
 export function createEdgeGlowTubes(group, apex, baseVerts, phases = null) {
   const tubeGroup = new THREE.Group();
   const outerMeshes = [];
@@ -34,7 +46,7 @@ export function createEdgeGlowTubes(group, apex, baseVerts, phases = null) {
     outerMats.push(outerMat);
     innerMats.push(innerMat);
 
-    const curve = new THREE.LineCurve3(baseVerts[i].clone(), apex.clone());
+    const curve = createInsetEdgeCurve(baseVerts[i], apex);
 
     const outerGeo = new THREE.TubeGeometry(
       curve,

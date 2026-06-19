@@ -11,6 +11,7 @@ import {
 } from '../ui/edgeFlowControls.js';
 import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
 import { getFootEmissiveIntensity } from '../ui/footControls.js';
+import { getMotionParticleVertexOpacity } from '../utils/motionParticleSettings.js';
 
 const DURATION = 1.35;
 const WIREFRAME_BLOOM_RATIO = 0.38;
