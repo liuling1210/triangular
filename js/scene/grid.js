@@ -4,7 +4,8 @@ import {
   createGridRevealMaterial,
   getGridRevealStartAngle,
   setGridRevealFade,
-  setGridRevealSweep,
+  setGridRevealInnerRadius,
+  setGridRevealOuterSweep,
   syncGridRevealUniforms
 } from '../materials/gridRevealMaterial.js';
 
@@ -145,14 +146,21 @@ function smootherstep(t) {
   return t * t * t * (t * (t * 6 - 15) + 10);
 }
 
-export function updateGridRevealFromContour(contourProgress, crossfadeElapsed = null) {
+/** 阶段 A：最外圈随轮廓角度扫出 */
+export function updateGridRevealFromContour(contourProgress) {
+  const material = state.gridRevealMaterial;
+  if (!material) return;
+  setGridRevealOuterSweep(material, clamp01(contourProgress));
+}
+
+/** 阶段 B：内部网格由内向外；完成后 crossfade 到实体网格 */
+export function updateGridRevealInner(innerProgress, crossfadeElapsed = null) {
   const material = state.gridRevealMaterial;
   if (!material) return;
 
-  const sweepProgress = clamp01(contourProgress);
-  setGridRevealSweep(material, sweepProgress);
+  setGridRevealInnerRadius(material, innerProgress);
 
-  if (sweepProgress < 0.999 || crossfadeElapsed == null) {
+  if (innerProgress < 0.999 || crossfadeElapsed == null) {
     return;
   }
 

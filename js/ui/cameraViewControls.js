@@ -83,6 +83,12 @@ export function setCameraView(preset, viewKey) {
   setViewButtonsBusy(true);
 }
 
+export function flyCameraToFrontView() {
+  if (!state.camera || !state.controls || !state.clock) return;
+  if (state.cameraViewTransition?.viewKey === VIEW_FRONT) return;
+  setCameraView(FRONT_VIEW_CAMERA, VIEW_FRONT);
+}
+
 export function setupCameraViewUI() {
   document.getElementById('view-top-btn').addEventListener('click', () => {
     setCameraView(INITIAL_CAMERA, VIEW_TOP);

@@ -17,11 +17,13 @@ import {
   getMotionParticleVertexOpacity
 } from '../utils/motionParticleSettings.js';
 import { restoreGlowObjectVisibility } from './glowWireframeTransition.js';
+import { flyCameraToFrontView } from '../ui/cameraViewControls.js';
 import {
   beginGridRevealForInitial,
   finishGridReveal,
   getGridRevealStartAngle,
-  updateGridRevealFromContour
+  updateGridRevealFromContour,
+  updateGridRevealInner
 } from '../scene/grid.js';
 
 /** 底面外轮廓：1号 → 3号 → 2号 → 回到 1号 */
@@ -259,14 +261,7 @@ function updateBaseLines(elapsed, reveal) {
 
   const contourProgress = getContourDrawProgress(elapsed, state.pyramidBaseVerts);
   reveal.contourProgress = contourProgress;
-  let gridCrossfadeElapsed = null;
-  if (contourProgress >= 0.999) {
-    if (reveal.gridCrossfadeStart == null) {
-      reveal.gridCrossfadeStart = elapsed;
-    }
-    gridCrossfadeElapsed = elapsed - reveal.gridCrossfadeStart;
-  }
-  updateGridRevealFromContour(contourProgress, gridCrossfadeElapsed);
+  updateGridRevealFromContour(contourProgress);
 
   const lineFade = softReveal(clamp01((elapsed - TIMELINE.baseSolid.start) / TIMELINE.baseSolid.duration));
   const lineIn = smootherstep(clamp01(elapsed / 0.18));
@@ -275,10 +270,7 @@ function updateBaseLines(elapsed, reveal) {
 
 function updateBaseSolid(elapsed, reveal) {
   const contourDone = (reveal?.contourProgress ?? 0) >= 0.999;
-  const crossfadeReady =
-    reveal?.gridCrossfadeStart != null &&
-    elapsed - reveal.gridCrossfadeStart >= 0.35;
-  if (!contourDone || !crossfadeReady) return;
+  if (!contourDone) return;
 
   const t = clamp01((elapsed - TIMELINE.baseSolid.start) / TIMELINE.baseSolid.duration);
   const baseW = softReveal(t);
@@ -373,9 +365,21 @@ function updateSliceLayer(elapsed, sliceIndex) {
   if (innerLine) innerLine.visible = edgeW > 0.04;
 }
 
-function updateSlices(elapsed) {
+function updateSlices(elapsed, reveal) {
   updateSliceLayer(elapsed, 0);
   updateSliceLayer(elapsed, 1);
+
+  const innerT = smootherstep(
+    clamp01((elapsed - TIMELINE.slices.start) / TIMELINE.slices.duration)
+  );
+  let gridCrossfadeElapsed = null;
+  if (innerT >= 0.999) {
+    if (reveal.gridCrossfadeStart == null) {
+      reveal.gridCrossfadeStart = elapsed;
+    }
+    gridCrossfadeElapsed = elapsed - reveal.gridCrossfadeStart;
+  }
+  updateGridRevealInner(innerT, gridCrossfadeElapsed);
 }
 
 function updateParticles(elapsed) {
@@ -471,6 +475,13 @@ export function startInitialReveal() {
   }
 }
 
+function updateInitialRevealCamera(elapsed, reveal) {
+  if (elapsed >= TIMELINE.baseSolid.start && !reveal.cameraFlyStarted) {
+    reveal.cameraFlyStarted = true;
+    flyCameraToFrontView();
+  }
+}
+
 export function updateInitialReveal() {
   const transition = state.effectTransition;
   const reveal = state.initialReveal;
@@ -480,6 +491,7 @@ export function updateInitialReveal() {
 
   const elapsed = state.clock.getElapsedTime() - transition.startTime;
 
+  updateInitialRevealCamera(elapsed, reveal);
   updateBaseLines(elapsed, reveal);
 
   if (elapsed >= TIMELINE.baseSolid.start) {
@@ -492,7 +504,7 @@ export function updateInitialReveal() {
     updateAxis(elapsed);
   }
   if (elapsed >= TIMELINE.slices.start) {
-    updateSlices(elapsed);
+    updateSlices(elapsed, reveal);
   }
   if (elapsed >= TIMELINE.particles.start) {
     updateParticles(elapsed);

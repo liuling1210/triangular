@@ -14,7 +14,8 @@ export function createGridRevealMaterial(startAngle = 0) {
       uRingCount: { value: state.gridSettings.ringCount },
       uRadialCount: { value: state.gridSettings.radialCount },
       uLineWidth: { value: state.gridSettings.lineWidth },
-      uSweepAngle: { value: 0 },
+      uOuterRingSweepAngle: { value: 0 },
+      uInnerRevealRadius: { value: 0 },
       uStartAngle: { value: startAngle },
       uDashLength: { value: 0.1 },
       uDashRatio: { value: 0.48 },
@@ -38,7 +39,8 @@ export function createGridRevealMaterial(startAngle = 0) {
       uniform float uRingCount;
       uniform float uRadialCount;
       uniform float uLineWidth;
-      uniform float uSweepAngle;
+      uniform float uOuterRingSweepAngle;
+      uniform float uInnerRevealRadius;
       uniform float uStartAngle;
       uniform float uDashLength;
       uniform float uDashRatio;
@@ -54,6 +56,11 @@ export function createGridRevealMaterial(startAngle = 0) {
         return d;
       }
 
+      bool inOuterSweep(float angleCCW) {
+        return uOuterRingSweepAngle >= TAU - 0.001
+          || (uOuterRingSweepAngle > 0.001 && angleCCW <= uOuterRingSweepAngle);
+      }
+
       void main() {
         vec2 p = vWorldPos.xz;
         float r = length(p);
@@ -62,38 +69,50 @@ export function createGridRevealMaterial(startAngle = 0) {
         float worldAngle = atan(p.x, p.y);
         float angleCCW = mod(uStartAngle - worldAngle + TAU, TAU);
 
-        bool inSweep = uSweepAngle >= TAU - 0.001 || (uSweepAngle > 0.001 && angleCCW <= uSweepAngle);
-        float solidMix = inSweep ? 1.0 : 0.0;
-
-        float lineWidth = mix(uLineWidth * 0.26, uLineWidth, solidMix);
-        float halfWidth = lineWidth * 0.55;
+        float halfWidth = uLineWidth * 0.55;
         float onLine = 0.0;
+        float solidMix = 1.0;
         float dashCoord = 0.0;
+        float lineAlpha = 1.0;
 
         float ringStep = uMaxRadius / uRingCount;
         float ringR1 = ringStep;
         float ringR2 = ringStep * 2.0;
         float ringR3 = ringStep * 3.0;
+        float outerRingR = ringStep * uRingCount;
 
-        if (uRingCount >= 1.0 && abs(r - ringR1) <= halfWidth) {
-          onLine = 1.0;
-          dashCoord = angleCCW * max(ringR1, 0.001);
-        }
-        if (uRingCount >= 2.0 && abs(r - ringR2) <= halfWidth) {
-          onLine = 1.0;
-          dashCoord = angleCCW * max(ringR2, 0.001);
-        }
-        if (uRingCount >= 3.0 && abs(r - ringR3) <= halfWidth) {
-          onLine = 1.0;
-          dashCoord = angleCCW * max(ringR3, 0.001);
-        }
+        bool onOuterRing = abs(r - outerRingR) <= halfWidth;
+        bool onRing1 = uRingCount >= 1.0 && abs(r - ringR1) <= halfWidth && ringR1 < outerRingR - 0.001;
+        bool onRing2 = uRingCount >= 2.0 && abs(r - ringR2) <= halfWidth && ringR2 < outerRingR - 0.001;
 
         float radialStep = TAU / uRadialCount;
         float snapped = floor((worldAngle + radialStep * 0.5) / radialStep) * radialStep;
         float radialDiff = angularDiff(worldAngle, snapped);
-        if (radialDiff <= halfWidth / max(r, 0.08) && r <= uMaxRadius) {
+        bool onRadial = radialDiff <= halfWidth / max(r, 0.08) && r <= uMaxRadius && r < outerRingR - halfWidth;
+
+        if (onOuterRing) {
+          bool swept = inOuterSweep(angleCCW);
+          if (!swept && uOuterRingSweepAngle <= 0.001) discard;
           onLine = 1.0;
-          dashCoord = r;
+          solidMix = swept ? 1.0 : 0.0;
+          dashCoord = angleCCW * max(outerRingR, 0.001);
+        } else if (onRing1 || onRing2 || onRadial) {
+          if (uInnerRevealRadius <= 0.001) discard;
+
+          float ringR = onRing1 ? ringR1 : ringR2;
+          if (onRing1 || onRing2) {
+            float ringMask = smoothstep(ringR - halfWidth * 1.5, ringR + halfWidth * 0.5, uInnerRevealRadius);
+            if (ringMask <= 0.001) discard;
+            onLine = 1.0;
+            lineAlpha = ringMask;
+            dashCoord = angleCCW * max(ringR, 0.001);
+          } else if (onRadial) {
+            float radialMask = 1.0 - smoothstep(uInnerRevealRadius - halfWidth * 2.0, uInnerRevealRadius + halfWidth, r);
+            if (radialMask <= 0.001) discard;
+            onLine = 1.0;
+            lineAlpha = radialMask;
+            dashCoord = r;
+          }
         }
 
         if (onLine < 0.5) discard;
@@ -103,7 +122,7 @@ export function createGridRevealMaterial(startAngle = 0) {
           if (phase >= uDashLength * uDashRatio) discard;
         }
 
-        float alpha = mix(uOpacity * 0.18, uOpacity, solidMix) * uRevealOpacity;
+        float alpha = mix(uOpacity * 0.18, uOpacity, solidMix) * uRevealOpacity * lineAlpha;
         gl_FragColor = vec4(uColor, alpha);
       }
     `,
@@ -129,9 +148,23 @@ export function syncGridRevealUniforms(material) {
   material.uniforms.uOpacity.value = s.brightness;
 }
 
-export function setGridRevealSweep(material, contourProgress) {
+export function setGridRevealOuterSweep(material, contourProgress) {
   if (!material?.uniforms) return;
-  material.uniforms.uSweepAngle.value = clamp01(contourProgress) * TAU;
+  material.uniforms.uOuterRingSweepAngle.value = clamp01(contourProgress) * TAU;
+}
+
+export function setGridRevealInnerRadius(material, innerProgress) {
+  if (!material?.uniforms) return;
+  const maxR = state.gridSettings.maxRadius;
+  material.uniforms.uInnerRevealRadius.value = clamp01(innerProgress) * maxR;
+  if (clamp01(innerProgress) > 0.001) {
+    material.uniforms.uOuterRingSweepAngle.value = TAU;
+  }
+}
+
+/** @deprecated use setGridRevealOuterSweep */
+export function setGridRevealSweep(material, contourProgress) {
+  setGridRevealOuterSweep(material, contourProgress);
 }
 
 export function setGridRevealFade(material, revealOpacity, solidFade = null) {
