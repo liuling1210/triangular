@@ -11,22 +11,22 @@ export const FRONT_VIEW_CAMERA = {
   azimuth: 1.027
 };
 
-export const DEFAULT_PYRAMID_COLOR = '#DDB873';
+export const DEFAULT_PYRAMID_COLOR = '#E8CB96';
 export const SHOW_LABELS = false;
-export const DEFAULT_BRIGHTNESS = 0.67;
+export const DEFAULT_BRIGHTNESS = 0.74;
 
 export const DEFAULT_SLICE_GRADIENTS = [
-  { start: '#383838', end: '#C2B85B' },
-  { start: '#323232', end: '#C2B85B' }
+  { start: '#383838', end: '#B6AE58' },
+  { start: '#323232', end: '#B6AE58' }
 ];
 
 export const DEFAULT_AXIS_SETTINGS = {
-  color: '#DDB873',
-  colorBrightness: 1.12,
+  color: '#B6AE58',
+  colorBrightness: 1.75,
   emissiveStrength: 0.95,
   emissiveIntensity: 0.44,
-  metalness: 0.45,
-  roughness: 0.1,
+  metalness: 0.79,
+  roughness: 0.36,
   clearcoat: 0.9,
   clearcoatRoughness: 0.06,
   lightIntensity: 2.8
@@ -45,9 +45,9 @@ export const DEFAULT_FOOT_SETTINGS = {
 };
 
 export const DEFAULT_SLICE_OPACITY = {
-  opacityCenter: 0.25,
-  opacityEdge: 0.95,
-  fadeRange: 1.0
+  opacityCenter: 0.34,
+  opacityEdge: 0.61,
+  fadeRange: 0.8
 };
 
 export const BASE_TONE_EXPOSURE = 1.2;
@@ -72,7 +72,7 @@ export const EDGE_FLOW = {
   innerRadius: 0.005,
   tubularSegments: 96,
   radialSegments: 8,
-  speed: 0.32,
+  speed: 0.72,
   baseOpacity: 0.95,
   endFadeBottom: 0.11,
   endFadeTop: 0.06,
@@ -85,7 +85,7 @@ export const DEFAULT_EDGE_FLOW_SETTINGS = {
   opacity: EDGE_FLOW.baseOpacity,
   intensity: 1,
   innerIntensityRatio: 1.15,
-  bandWidth: 0.12,
+  bandWidth: 0.06,
   outerRadius: EDGE_FLOW.outerRadius,
   innerRadius: EDGE_FLOW.innerRadius,
   endFadeBottom: EDGE_FLOW.endFadeBottom,
@@ -94,7 +94,7 @@ export const DEFAULT_EDGE_FLOW_SETTINGS = {
   topInsetRatio: EDGE_FLOW.topInsetRatio
 };
 
-export const PARTICLE_RISE_SPEED = 0.18;
+export const PARTICLE_RISE_SPEED = 0.28;
 export const INTERNAL_FLOW_OPACITY = 0.95;
 
 export const DEFAULT_MOTION_PARTICLE_SETTINGS = {
@@ -103,7 +103,7 @@ export const DEFAULT_MOTION_PARTICLE_SETTINGS = {
   internalSize: 0.065,
   vertexSize: 0.28,
   vertexOpacity: 1,
-  count: 1
+  count: 0.37
 };
 
 export const MOTION_PARTICLE_BASE_COUNTS = {
@@ -133,8 +133,8 @@ export const GRID = {
   maxRingCount: 6,
   maxRadius: 2.715,
   radialCount: 24,
-  lineWidth: 0.006,
-  brightness: 0.31,
+  lineWidth: 0.011,
+  brightness: 0.29,
   color: 0x888888,
   y: -0.045
 };

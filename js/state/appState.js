@@ -35,6 +35,7 @@ export const state = {
   fxaaPass: null,
   labelElements: [],
   baseCornerMarkers: [],
+  showCornerMarkers: true,
   clock: null,
   pyramidApex: null,
   pyramidBaseVerts: null,

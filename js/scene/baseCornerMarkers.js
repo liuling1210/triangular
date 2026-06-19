@@ -34,3 +34,22 @@ export function createBaseCornerMarkers(baseVerts) {
     });
   });
 }
+
+export function applyCornerMarkersVisibility() {
+  state.baseCornerMarkers.forEach((marker) => {
+    if (!state.showCornerMarkers) {
+      marker.element.style.opacity = '0';
+    }
+  });
+}
+
+export function setCornerMarkersVisible(visible) {
+  state.showCornerMarkers = visible;
+  if (visible) {
+    state.baseCornerMarkers.forEach((marker) => {
+      marker.element.style.opacity = '1';
+    });
+  } else {
+    applyCornerMarkersVisibility();
+  }
+}

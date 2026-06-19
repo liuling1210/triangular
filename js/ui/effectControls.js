@@ -11,6 +11,7 @@ import {
 } from '../transitions/glowWireframeTransition.js';
 import { startWireParticleTransition } from '../transitions/wireframeParticleTransition.js';
 import { startParticleGlowTransition } from '../transitions/particleGlowTransition.js';
+import { setCornerMarkersVisible } from '../scene/baseCornerMarkers.js';
 
 const WIREFRAME_BLOOM_RATIO = 0.38;
 
@@ -69,4 +70,10 @@ export function setupEffectUI() {
     setPyramidEffect(PYRAMID_EFFECT_MODES.PARTICLES);
   });
   setPyramidEffect(state.pyramidEffectMode);
+
+  const cornerMarkersBtn = document.getElementById('corner-markers-toggle-btn');
+  cornerMarkersBtn.addEventListener('click', () => {
+    setCornerMarkersVisible(!state.showCornerMarkers);
+    cornerMarkersBtn.classList.toggle('active', state.showCornerMarkers);
+  });
 }

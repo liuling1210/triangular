@@ -253,6 +253,12 @@ function applyPhysicalReveal(mat, baseOpacity, emissiveScale, weight) {
 function updateCornerMarkers(elapsed) {
   const markers = state.baseCornerMarkers;
   if (!markers.length) return;
+  if (!state.showCornerMarkers) {
+    markers.forEach((marker) => {
+      marker.element.style.opacity = '0';
+    });
+    return;
+  }
 
   const segStarts = CONTOUR_VERTEX_PATH.map((_, i) => i * (CONTOUR_SEGMENT_DURATION - CONTOUR_SEGMENT_OVERLAP));
 
@@ -454,7 +460,7 @@ function finishInitialReveal(reveal) {
   applyAxisMaterial();
 
   state.baseCornerMarkers.forEach((marker) => {
-    marker.element.style.opacity = '1';
+    marker.element.style.opacity = state.showCornerMarkers ? '1' : '0';
   });
 
   if (state.bloomPass) {
