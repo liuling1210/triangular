@@ -1,6 +1,10 @@
 import { PYRAMID_EFFECT_MODES, BASE_BLOOM_STRENGTH } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import {
+  applyMotionParticleColors,
+  getMotionGoldWeightForMode
+} from '../utils/motionParticleColors.js';
+import {
   isEffectTransitioning,
   restoreGlowObjectVisibility,
   startGlowWireTransition
@@ -15,6 +19,8 @@ export function setPyramidEffect(mode) {
   if (!glow || !wireframe || !particles) return;
 
   state.pyramidEffectMode = mode;
+  state.motionParticleGoldWeight = getMotionGoldWeightForMode(mode);
+  applyMotionParticleColors(state.motionParticleGoldWeight);
   glow.visible = mode === PYRAMID_EFFECT_MODES.GLOW;
   wireframe.visible = mode === PYRAMID_EFFECT_MODES.WIREFRAME;
   particles.visible = mode === PYRAMID_EFFECT_MODES.PARTICLES;

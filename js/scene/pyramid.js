@@ -3,7 +3,8 @@ import {
   DEFAULT_AXIS_SETTINGS,
   BASE_EMISSIVE,
   RENDER_ORDER,
-  PARTICLE_RISE_SPEED,
+  DEFAULT_MOTION_PARTICLE_SETTINGS,
+  MOTION_PARTICLE_BASE_COUNTS,
   R,
   H,
   SHAFT_RADIUS,
@@ -28,6 +29,8 @@ import { createGradientSliceMaterial } from '../materials/sliceMaterial.js';
 import { createWireframePyramid } from './wireframePyramid.js';
 import { createParticlePyramid } from './particlePyramid.js';
 import { createEdgeGlowTubes } from './edgeGlowTubes.js';
+import { createBaseCornerMarkers } from './baseCornerMarkers.js';
+import { getMotionParticleRiseSpeed, getMotionParticleCountMultiplier } from '../utils/motionParticleSettings.js';
 
 function encodeParticleStream(x, y, z, phase) {
   const angle = Math.atan2(z, x);
@@ -36,7 +39,12 @@ function encodeParticleStream(x, y, z, phase) {
   return { angle, radialNorm: Math.min(r / maxR, 1), phase };
 }
 
-function createInternalParticles(group, apex, baseVerts, sliceHeights) {
+function scaleParticleCount(base, multiplier) {
+  return Math.max(1, Math.round(base * multiplier));
+}
+
+function createInternalParticles(group, apex, baseVerts, sliceHeights, countMultiplier = 1) {
+  const counts = MOTION_PARTICLE_BASE_COUNTS;
   const particles = [];
   const streams = [];
 
@@ -45,7 +53,7 @@ function createInternalParticles(group, apex, baseVerts, sliceHeights) {
     streams.push(encodeParticleStream(x, y, z, Math.random()));
   }
 
-  for (let i = 0; i < 900; i++) {
+  for (let i = 0; i < scaleParticleCount(counts.volume, countMultiplier); i++) {
     const y = Math.random() * H * 0.95;
     const maxR = radiusAtHeight(y) * 0.85;
     const angle = Math.random() * Math.PI * 2;
@@ -53,7 +61,7 @@ function createInternalParticles(group, apex, baseVerts, sliceHeights) {
     addParticle(rad * Math.cos(angle), y, rad * Math.sin(angle));
   }
 
-  for (let i = 0; i < 500; i++) {
+  for (let i = 0; i < scaleParticleCount(counts.core, countMultiplier); i++) {
     const y = Math.random() * H * 0.98;
     const angle = Math.random() * Math.PI * 2;
     const rad = Math.random() * 0.35;
@@ -63,7 +71,7 @@ function createInternalParticles(group, apex, baseVerts, sliceHeights) {
   sliceHeights.forEach((y) => {
     const sv = getSliceVertices(baseVerts, y);
     const batch = [];
-    sampleTriangle(sv[0], sv[1], sv[2], 180, batch);
+    sampleTriangle(sv[0], sv[1], sv[2], scaleParticleCount(counts.slice, countMultiplier), batch);
     for (let i = 0; i < batch.length; i += 3) {
       addParticle(batch[i], batch[i + 1], batch[i + 2]);
     }
@@ -72,7 +80,7 @@ function createInternalParticles(group, apex, baseVerts, sliceHeights) {
   for (let i = 0; i < 3; i++) {
     const next = (i + 1) % 3;
     const batch = [];
-    sampleTriangle(apex, baseVerts[i], baseVerts[next], 200, batch);
+    sampleTriangle(apex, baseVerts[i], baseVerts[next], scaleParticleCount(counts.face, countMultiplier), batch);
     for (let j = 0; j < batch.length; j += 3) {
       addParticle(batch[j], batch[j + 1], batch[j + 2]);
     }
@@ -84,18 +92,21 @@ function createInternalParticles(group, apex, baseVerts, sliceHeights) {
   state.internalParticleGeo = pGeo;
   state.internalParticleStreams = streams;
 
-  const pMat = new THREE.PointsMaterial({
-    color: DEFAULT_PYRAMID_COLOR,
-    size: 0.065,
-    map: createGlowTexture(DEFAULT_PYRAMID_COLOR, false),
-    transparent: true,
-    opacity: 0.95,
-    vertexColors: true,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    depthTest: false
-  });
-  state.pyramidMats.particles = pMat;
+  let pMat = state.pyramidMats.particles;
+  if (!pMat) {
+    pMat = new THREE.PointsMaterial({
+      color: DEFAULT_PYRAMID_COLOR,
+      size: DEFAULT_MOTION_PARTICLE_SETTINGS.internalSize,
+      map: createGlowTexture(DEFAULT_PYRAMID_COLOR, false),
+      transparent: true,
+      opacity: DEFAULT_MOTION_PARTICLE_SETTINGS.opacity,
+      vertexColors: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      depthTest: false
+    });
+    state.pyramidMats.particles = pMat;
+  }
 
   const internalPoints = new THREE.Points(pGeo, pMat);
   internalPoints.renderOrder = RENDER_ORDER.particles;
@@ -103,15 +114,41 @@ function createInternalParticles(group, apex, baseVerts, sliceHeights) {
   return internalPoints;
 }
 
+export function rebuildInternalParticles() {
+  const flowGroup = state.pyramidGroups.flow;
+  if (!flowGroup || !state.pyramidApex || !state.pyramidBaseVerts) return;
+
+  const existing = state.glowObjects.internalPoints;
+  if (existing) {
+    flowGroup.remove(existing);
+    existing.geometry.dispose();
+  }
+
+  state.internalParticleGeo = null;
+  state.internalParticleStreams = [];
+
+  const sliceHeights = state.pyramidSliceHeights ?? [H / 3, (2 * H) / 3];
+  state.glowObjects.internalPoints = createInternalParticles(
+    flowGroup,
+    state.pyramidApex,
+    state.pyramidBaseVerts,
+    sliceHeights,
+    getMotionParticleCountMultiplier()
+  );
+}
+
 export function createPyramid() {
   const glowGroup = new THREE.Group();
   const wireframeGroup = new THREE.Group();
   const particleGroup = new THREE.Group();
-  state.pyramidGroups = { glow: glowGroup, wireframe: wireframeGroup, particles: particleGroup };
+  const flowGroup = new THREE.Group();
+  state.pyramidGroups = { glow: glowGroup, wireframe: wireframeGroup, particles: particleGroup, flow: flowGroup };
   state.glowObjects = {
     edgeGlowTubes: null,
     vertexPoints: null,
     internalPoints: null,
+    axisShaft: null,
+    slicePlanes: [],
     sliceEdgeLines: [],
     sliceInnerEdgeLines: [],
     meshes: []
@@ -119,14 +156,18 @@ export function createPyramid() {
   state.scene.add(glowGroup);
   state.scene.add(wireframeGroup);
   state.scene.add(particleGroup);
+  state.scene.add(flowGroup);
   wireframeGroup.visible = false;
   particleGroup.visible = false;
+  flowGroup.visible = true;
 
   const coneGeo = createPyramidConeGeo();
   const { apex, baseVerts } = extractPyramidKeyPoints(coneGeo);
   state.pyramidApex = apex;
   state.pyramidBaseVerts = baseVerts.map((v) => v.clone());
+  createBaseCornerMarkers(baseVerts);
   const sliceHeights = [H / 3, (2 * H) / 3];
+  state.pyramidSliceHeights = sliceHeights;
 
   const bottomR = radiusAtHeight(SOLID_BOTTOM_HEIGHT);
   const bottomFrustumGeo = new THREE.CylinderGeometry(bottomR, R, SOLID_BOTTOM_HEIGHT, 3, 1, true);
@@ -189,6 +230,7 @@ export function createPyramid() {
     plane.frustumCulled = false;
     glowGroup.add(plane);
     state.glowObjects.meshes.push(plane);
+    state.glowObjects.slicePlanes.push(plane);
 
     const sliceEdgeGeo = new THREE.BufferGeometry().setFromPoints([
       sv[0], sv[1], sv[1], sv[2], sv[2], sv[0]
@@ -278,6 +320,8 @@ export function createPyramid() {
   tipMesh.renderOrder = RENDER_ORDER.axis;
   axisShaft.add(tipMesh);
   glowGroup.add(axisShaft);
+  state.glowObjects.axisShaft = axisShaft;
+
   state.glowObjects.meshes.push(cylMesh, tipMesh);
 
   const edgeGlow = createEdgeGlowTubes(glowGroup, apex, baseVerts);
@@ -300,10 +344,10 @@ export function createPyramid() {
 
   const vertexMat = new THREE.PointsMaterial({
     color: DEFAULT_PYRAMID_COLOR,
-    size: 0.28,
+    size: DEFAULT_MOTION_PARTICLE_SETTINGS.vertexSize,
     map: createGlowTexture(DEFAULT_PYRAMID_COLOR, true),
     transparent: true,
-    opacity: 1,
+    opacity: DEFAULT_MOTION_PARTICLE_SETTINGS.vertexOpacity,
     vertexColors: true,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
@@ -315,7 +359,13 @@ export function createPyramid() {
   glowGroup.add(vertexPoints);
   state.glowObjects.vertexPoints = vertexPoints;
 
-  state.glowObjects.internalPoints = createInternalParticles(glowGroup, apex, baseVerts, sliceHeights);
+  state.glowObjects.internalPoints = createInternalParticles(
+    flowGroup,
+    apex,
+    baseVerts,
+    sliceHeights,
+    getMotionParticleCountMultiplier()
+  );
   createWireframePyramid(wireframeGroup, apex, baseVerts, sliceHeights);
   createParticlePyramid(particleGroup, apex, baseVerts, sliceHeights);
 }
@@ -354,14 +404,15 @@ export function stampParticleFlowClock() {
 }
 
 export function updateParticleFlow(elapsed, options = {}) {
-  const pulseWeight = clamp01(options.pulseWeight ?? 1);
+  const vertexPulseWeight = clamp01(options.vertexPulseWeight ?? 1);
+  const riseSpeed = getMotionParticleRiseSpeed();
 
   if (state.internalParticleGeo && state.internalParticleStreams.length) {
     const pos = state.internalParticleGeo.attributes.position.array;
     const colors = state.internalParticleGeo.attributes.color.array;
     for (let i = 0; i < state.internalParticleStreams.length; i++) {
       const s = state.internalParticleStreams[i];
-      const t = (s.phase + (elapsed * PARTICLE_RISE_SPEED) / H) % 1;
+      const t = (s.phase + (elapsed * riseSpeed) / H) % 1;
       const y = t * H;
       const maxR = radiusAtHeight(y) * 0.85;
       const r = s.radialNorm * maxR;
@@ -370,10 +421,9 @@ export function updateParticleFlow(elapsed, options = {}) {
       pos[i3 + 1] = y;
       pos[i3 + 2] = r * Math.sin(s.angle);
       const sinFade = 0.4 + 0.6 * Math.sin(Math.PI * t);
-      const fade = neutralFade(sinFade, 0.65, pulseWeight);
-      colors[i3] = fade;
-      colors[i3 + 1] = fade;
-      colors[i3 + 2] = fade;
+      colors[i3] = sinFade;
+      colors[i3 + 1] = sinFade;
+      colors[i3 + 2] = sinFade;
     }
     state.internalParticleGeo.attributes.position.needsUpdate = true;
     state.internalParticleGeo.attributes.color.needsUpdate = true;
@@ -384,13 +434,13 @@ export function updateParticleFlow(elapsed, options = {}) {
     const colors = state.vertexParticleGeo.attributes.color.array;
     for (let i = 0; i < state.vertexParticleStreams.length; i++) {
       const s = state.vertexParticleStreams[i];
-      const t = (s.phase + (elapsed * PARTICLE_RISE_SPEED) / H) % 1;
+      const t = (s.phase + (elapsed * riseSpeed) / H) % 1;
       const i3 = i * 3;
       pos[i3] = s.startX + (state.pyramidApex.x - s.startX) * t;
       pos[i3 + 1] = s.startY + (state.pyramidApex.y - s.startY) * t;
       pos[i3 + 2] = s.startZ + (state.pyramidApex.z - s.startZ) * t;
       const sinFade = 0.45 + 0.55 * Math.sin(Math.PI * t);
-      const fade = neutralFade(sinFade, 0.65, pulseWeight);
+      const fade = neutralFade(sinFade, 0.65, vertexPulseWeight);
       colors[i3] = fade;
       colors[i3 + 1] = fade;
       colors[i3 + 2] = fade;

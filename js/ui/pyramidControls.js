@@ -5,8 +5,11 @@ import {
   BASE_EMISSIVE
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
-import { createGlowTexture } from '../utils/color.js';
+import {
+  getMotionGoldWeightForMode
+} from '../utils/motionParticleColors.js';
 import { applyEdgeFlowAppearance } from './edgeFlowControls.js';
+import { applyMotionParticleAppearance } from './motionParticleControls.js';
 import { applySliceGradients } from './sliceControls.js';
 
 export function applyPyramidColorAndBrightness() {
@@ -32,9 +35,13 @@ export function applyPyramidColorAndBrightness() {
   }
   applyEdgeFlowAppearance();
   applySliceGradients();
-  if (pyramidMats.particles) pyramidMats.particles.color.copy(threeColor);
-  if (pyramidMats.particleCloud) pyramidMats.particleCloud.color.copy(threeColor);
-  if (pyramidMats.vertex) pyramidMats.vertex.color.copy(threeColor);
+  applyMotionParticleAppearance(
+    state.motionParticleGoldWeight ?? getMotionGoldWeightForMode(state.pyramidEffectMode)
+  );
+
+  if (pyramidMats.particleCloud) {
+    pyramidMats.particleCloud.opacity = 0.92 * state.pyramidBrightness;
+  }
 
   if (pyramidLights.core) {
     pyramidLights.core.color.copy(threeColor);
@@ -49,26 +56,6 @@ export function applyPyramidColorAndBrightness() {
   }
   if (state.bloomPass) {
     state.bloomPass.strength = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
-  }
-
-  const glowTexBright = createGlowTexture(state.pyramidColorHex, true);
-  const glowTexSoft = createGlowTexture(state.pyramidColorHex, false);
-  if (pyramidMats.vertex) {
-    if (pyramidMats.vertex.map) pyramidMats.vertex.map.dispose();
-    pyramidMats.vertex.map = glowTexBright;
-    pyramidMats.vertex.needsUpdate = true;
-  }
-  if (pyramidMats.particles) {
-    if (pyramidMats.particles.map) pyramidMats.particles.map.dispose();
-    pyramidMats.particles.map = glowTexSoft;
-    pyramidMats.particles.needsUpdate = true;
-  }
-  if (pyramidMats.particleCloud) {
-    pyramidMats.particleCloud.color.copy(threeColor);
-    pyramidMats.particleCloud.opacity = 0.92 * state.pyramidBrightness;
-    if (pyramidMats.particleCloud.map) pyramidMats.particleCloud.map.dispose();
-    pyramidMats.particleCloud.map = glowTexBright;
-    pyramidMats.particleCloud.needsUpdate = true;
   }
 
   const r = Math.round(threeColor.r * 255);

@@ -6,6 +6,7 @@ import { state } from '../state/appState.js';
 import { resetParticleCloudColors } from '../scene/particlePyramid.js';
 import { applyPyramidColorAndBrightness } from '../ui/pyramidControls.js';
 import { isEffectTransitioning } from './glowWireframeTransition.js';
+import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
 
 const DURATION = 1.5;
 const WIREFRAME_BLOOM_RATIO = 0.38;
@@ -130,6 +131,7 @@ function setTransitionButtonBusy(busy) {
 function finishTransition() {
   state.pyramidEffectMode = PYRAMID_EFFECT_MODES.PARTICLES;
   state.effectTransition = null;
+  state.motionParticleGoldWeight = 1;
 
   const { wireframe, particles } = state.pyramidGroups;
   if (wireframe) {
@@ -143,6 +145,7 @@ function finishTransition() {
     mat.size = PARTICLE_BASE_SIZE;
   }
   resetParticleCloudColors();
+  applyMotionParticleColors(1);
   applyPyramidColorAndBrightness();
 
   document.getElementById('effect-glow-btn').classList.toggle('active', false);
@@ -172,6 +175,8 @@ export function startWireParticleTransition() {
     mat.opacity = 0;
   }
   setParticleRevealWeight(0);
+  state.motionParticleGoldWeight = 0;
+  applyMotionParticleColors(0);
 
   state.effectTransition = {
     active: true,
@@ -194,6 +199,8 @@ export function updateWireParticleTransition() {
 
   setWireframeDissolveWeight(progress);
   setParticleRevealWeight(progress);
+  const revealProgress = clamp01((progress - TRANSFORM_START) / TRANSFORM_SPAN);
+  applyMotionParticleColors(smootherstep(revealProgress));
   applyBloomForTransition(progress);
 
   if (progress >= 1) {

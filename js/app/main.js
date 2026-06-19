@@ -5,17 +5,19 @@ import { createCircularGrid } from '../scene/grid.js';
 import { createLabels } from '../scene/labels.js';
 import { setupLights } from '../scene/lights.js';
 import { setupControls } from '../scene/controls.js';
+import { setupCameraInfoPopup } from '../ui/cameraInfoPopup.js';
 import { setupPostProcessing, updateFxaaResolution } from '../postprocessing/setup.js';
 import { applyPyramidColorAndBrightness, setupColorBrightnessUI } from '../ui/pyramidControls.js';
 import { applyAxisMaterial, setupAxisUI } from '../ui/axisControls.js';
 import { setupSliceGradientUI } from '../ui/sliceControls.js';
 import { setupEdgeFlowUI } from '../ui/edgeFlowControls.js';
+import { setupMotionParticleUI } from '../ui/motionParticleControls.js';
+import { setupGridUI } from '../ui/gridControls.js';
 import { setupPanelSections } from '../ui/panelSections.js';
 import { setupEffectUI } from '../ui/effectControls.js';
 import {
   setupGlowWireTransitionUI,
-  updateGlowWireTransition,
-  isEffectTransitioning
+  updateGlowWireTransition
 } from '../transitions/glowWireframeTransition.js';
 import {
   setupWireParticleTransitionUI,
@@ -25,6 +27,10 @@ import {
   setupParticleGlowTransitionUI,
   updateParticleGlowTransition
 } from '../transitions/particleGlowTransition.js';
+import {
+  startInitialReveal,
+  updateInitialReveal
+} from '../transitions/initialRevealTransition.js';
 
 function onWindowResize() {
   state.camera.aspect = window.innerWidth / window.innerHeight;
@@ -38,18 +44,19 @@ function onWindowResize() {
 function animate() {
   requestAnimationFrame(animate);
   state.controls.update();
-  if (!isEffectTransitioning()) {
-    const elapsed = advanceParticleFlowClock(1);
-    updateParticleFlow(elapsed);
-  }
+  const elapsed = advanceParticleFlowClock(1);
+  updateParticleFlow(elapsed);
   if (state.clock) {
     updateEdgeFlow(state.clock.getElapsedTime());
   }
   updateGlowWireTransition();
   updateWireParticleTransition();
   updateParticleGlowTransition();
+  updateInitialReveal();
   state.composer.render();
-  if (SHOW_LABELS) state.labelRenderer.render(state.scene, state.camera);
+  if (SHOW_LABELS || state.baseCornerMarkers.length) {
+    state.labelRenderer.render(state.scene, state.camera);
+  }
 }
 
 function init() {
@@ -60,14 +67,6 @@ function init() {
   state.scene.fog = new THREE.FogExp2(0x000000, 0.045);
 
   state.camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
-  const pitchRad = (72 * Math.PI) / 180;
-  const cameraDistance = 7.5;
-  state.camera.position.set(
-    0,
-    cameraDistance * Math.cos(pitchRad),
-    cameraDistance * Math.sin(pitchRad)
-  );
-  state.camera.lookAt(0, 1.35, 0);
 
   state.renderer = new THREE.WebGLRenderer({ antialias: true });
   state.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -90,9 +89,12 @@ function init() {
   setupLights();
   setupPostProcessing();
   setupControls();
+  setupCameraInfoPopup();
   setupPanelSections();
   setupColorBrightnessUI(applyAxisMaterial);
   setupEdgeFlowUI();
+  setupMotionParticleUI();
+  setupGridUI();
   setupAxisUI();
   setupSliceGradientUI();
   setupEffectUI();
@@ -103,6 +105,7 @@ function init() {
   applyAxisMaterial();
 
   state.clock = new THREE.Clock();
+  startInitialReveal();
   window.addEventListener('resize', onWindowResize);
   animate();
 }

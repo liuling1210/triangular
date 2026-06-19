@@ -15,6 +15,8 @@ export function createGradientSliceMaterial(centroid, maxDist, grad, opacity) {
       uOpacityEdge: { value: opacity.opacityEdge },
       uFadeRange: { value: opacity.fadeRange },
       uIntensity: { value: 1.0 },
+      uRevealRadius: { value: 1.2 },
+      uRevealSoftness: { value: 0.15 },
       uShaftRadius: { value: SHAFT_RADIUS },
       uShaftCylHeight: { value: SHAFT_CYL_HEIGHT },
       uShaftTipHeight: { value: SHAFT_TIP_HEIGHT }
@@ -35,6 +37,8 @@ export function createGradientSliceMaterial(centroid, maxDist, grad, opacity) {
       uniform float uOpacityEdge;
       uniform float uFadeRange;
       uniform float uIntensity;
+      uniform float uRevealRadius;
+      uniform float uRevealSoftness;
       uniform float uShaftRadius;
       uniform float uShaftCylHeight;
       uniform float uShaftTipHeight;
@@ -51,14 +55,17 @@ export function createGradientSliceMaterial(centroid, maxDist, grad, opacity) {
         if (length(vPos.xz) < pillarRadiusAt(vPos.y)) discard;
 
         float radial = clamp(length(vPos - uCentroid) / uMaxDist, 0.0, 1.0);
+        float revealMask = 1.0 - smoothstep(uRevealRadius - uRevealSoftness, uRevealRadius, radial);
+        if (revealMask <= 0.001) discard;
+
         float edgeGlow = pow(radial, 1.55);
         vec3 col = mix(colorStart, colorEnd, edgeGlow);
         col += colorEnd * pow(edgeGlow, 2.8) * 0.45 * uIntensity;
         col = max(col, colorStart * 0.55 + vec3(0.035));
-        col *= uIntensity;
+        col *= uIntensity * revealMask;
         float inner = 1.0 - uFadeRange;
         float fadeT = smoothstep(inner, 1.0, radial);
-        float alpha = mix(uOpacityCenter, uOpacityEdge, fadeT);
+        float alpha = mix(uOpacityCenter, uOpacityEdge, fadeT) * revealMask;
         gl_FragColor = vec4(col, alpha);
       }
     `,

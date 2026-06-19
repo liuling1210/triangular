@@ -9,6 +9,8 @@ import {
   getEdgeFlowOuterIntensity,
   getEdgeFlowInnerIntensity
 } from '../ui/edgeFlowControls.js';
+import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
+import { getMotionParticleVertexOpacity } from '../utils/motionParticleSettings.js';
 
 const DURATION = 1.35;
 const WIREFRAME_BLOOM_RATIO = 0.38;
@@ -47,7 +49,6 @@ export function restoreGlowObjectVisibility() {
 
   if (objects.edgeGlowTubes) objects.edgeGlowTubes.tubeGroup.visible = true;
   if (objects.vertexPoints) objects.vertexPoints.visible = true;
-  if (objects.internalPoints) objects.internalPoints.visible = true;
   objects.sliceEdgeLines.forEach((line) => {
     line.visible = true;
   });
@@ -108,8 +109,7 @@ function setGlowVisualWeight(w) {
     mat.uniforms.uOpacity.value = getEdgeFlowOpacity(weight);
     mat.uniforms.uIntensity.value = getEdgeFlowInnerIntensity(weight);
   });
-  if (mats.particles) mats.particles.opacity = 0.95 * weight;
-  if (mats.vertex) mats.vertex.opacity = weight;
+  if (mats.vertex) mats.vertex.opacity = getMotionParticleVertexOpacity() * weight;
 }
 
 function setWireframeVisualWeight(t) {
@@ -160,9 +160,8 @@ function syncGlowToWireVisibility(glowWeight, wireWeight) {
     line.visible = !hideGlowLines;
   });
 
-  const showParticles = glowWeight > GLOW_PARTICLE_HIDE;
-  if (objects.internalPoints) objects.internalPoints.visible = showParticles;
-  if (objects.vertexPoints) objects.vertexPoints.visible = showParticles;
+  const showDecor = glowWeight > GLOW_PARTICLE_HIDE;
+  if (objects.vertexPoints) objects.vertexPoints.visible = showDecor;
 
   const showMeshes = glowWeight > GLOW_MESH_HIDE;
   objects.meshes.forEach((mesh) => {
@@ -175,6 +174,8 @@ function syncGlowToWireVisibility(glowWeight, wireWeight) {
 function finishTransition() {
   state.pyramidEffectMode = PYRAMID_EFFECT_MODES.WIREFRAME;
   state.effectTransition = null;
+  state.motionParticleGoldWeight = 0;
+  applyMotionParticleColors(0);
 
   const { glow, wireframe } = state.pyramidGroups;
   if (wireframe) wireframe.visible = true;
@@ -211,6 +212,8 @@ export function startGlowWireTransition() {
   restoreGlowObjectVisibility();
   setGlowVisualWeight(1);
   setWireframeVisualWeight(0);
+  state.motionParticleGoldWeight = 1;
+  applyMotionParticleColors(1);
 
   state.effectTransition = {
     active: true,
@@ -233,8 +236,10 @@ export function updateGlowWireTransition() {
 
   const glowWeight = glowFadeOut(progress);
   const wireWeight = wireFadeIn(progress);
+  const goldWeight = 1 - wireFadeIn(progress, 0.1, 0.9);
   setGlowVisualWeight(glowWeight);
   setWireframeVisualWeight(wireWeight);
+  applyMotionParticleColors(goldWeight);
   syncGlowToWireVisibility(glowWeight, wireWeight);
   applyBloomForTransition(progress);
 

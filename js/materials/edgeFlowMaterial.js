@@ -76,13 +76,21 @@ export function createEdgeFlowMaterial(isCore, phase = 0) {
   });
 }
 
-export function applyEdgeFlowColors(materials, hexColor, brightness, opacity) {
+export function applyEdgeFlowShaderColors(materials, hexColor) {
   if (!materials) return;
   const list = Array.isArray(materials) ? materials : [materials];
   const color = new THREE.Color(hexColor);
   list.forEach((material) => {
     material.uniforms.uBaseColor.value.copy(color);
     material.uniforms.uGlowColor.value.copy(color);
+  });
+}
+
+export function applyEdgeFlowColors(materials, hexColor, brightness, opacity) {
+  if (!materials) return;
+  const list = Array.isArray(materials) ? materials : [materials];
+  applyEdgeFlowShaderColors(list, hexColor);
+  list.forEach((material) => {
     material.uniforms.uIntensity.value = brightness;
     material.uniforms.uOpacity.value = opacity;
   });

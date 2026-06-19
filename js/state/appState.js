@@ -5,6 +5,8 @@ import {
   DEFAULT_SLICE_OPACITY,
   DEFAULT_AXIS_SETTINGS,
   DEFAULT_EDGE_FLOW_SETTINGS,
+  DEFAULT_GRID_SETTINGS,
+  DEFAULT_MOTION_PARTICLE_SETTINGS,
   PYRAMID_EFFECT_MODES
 } from '../config/constants.js';
 
@@ -15,17 +17,26 @@ export const state = {
   sliceOpacity: { ...DEFAULT_SLICE_OPACITY },
   axisSettings: { ...DEFAULT_AXIS_SETTINGS },
   edgeFlowSettings: { ...DEFAULT_EDGE_FLOW_SETTINGS },
+  motionParticleSettings: { ...DEFAULT_MOTION_PARTICLE_SETTINGS },
+  gridSettings: { ...DEFAULT_GRID_SETTINGS },
+  gridGroup: null,
+  gridMaterial: null,
+  gridRevealGroup: null,
+  gridRevealMaterial: null,
   pyramidEffectMode: PYRAMID_EFFECT_MODES.GLOW,
-  pyramidGroups: { glow: null, wireframe: null, particles: null },
+  motionParticleGoldWeight: 1,
+  pyramidGroups: { glow: null, wireframe: null, particles: null, flow: null },
   glowObjects: null,
   pyramidMats: {},
   pyramidLights: {},
   bloomPass: null,
   fxaaPass: null,
   labelElements: [],
+  baseCornerMarkers: [],
   clock: null,
   pyramidApex: null,
   pyramidBaseVerts: null,
+  pyramidSliceHeights: null,
   internalParticleGeo: null,
   internalParticleStreams: [],
   vertexParticleGeo: null,
@@ -39,5 +50,6 @@ export const state = {
   labelRenderer: null,
   controls: null,
   composer: null,
-  effectTransition: null
+  effectTransition: null,
+  initialReveal: null
 };

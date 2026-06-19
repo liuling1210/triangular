@@ -3,6 +3,7 @@ import {
   applyEdgeFlowColors,
   applyEdgeFlowUniforms
 } from '../materials/edgeFlowMaterial.js';
+import { getMotionParticleMixHex } from '../utils/motionParticleColors.js';
 import { rebuildEdgeGlowTubes } from '../scene/edgeGlowTubes.js';
 
 export function getEdgeFlowOpacity(multiplier = 1) {
@@ -23,13 +24,13 @@ export function applyEdgeFlowAppearance() {
 
   applyEdgeFlowColors(
     pyramidMats.edgeFlowOuter,
-    state.pyramidColorHex,
+    getMotionParticleMixHex(),
     getEdgeFlowOuterIntensity(),
     opacity
   );
   applyEdgeFlowColors(
     pyramidMats.edgeFlowInner,
-    state.pyramidColorHex,
+    getMotionParticleMixHex(),
     getEdgeFlowInnerIntensity(),
     opacity
   );

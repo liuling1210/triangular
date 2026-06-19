@@ -10,49 +10,50 @@ import {
   getEdgeFlowInnerIntensity
 } from '../ui/edgeFlowControls.js';
 import { resetParticleCloudColors } from '../scene/particlePyramid.js';
-import { updateParticleFlow, syncParticleFlowClock, advanceParticleFlowClock, stampParticleFlowClock } from '../scene/pyramid.js';
 import { applyPyramidColorAndBrightness } from '../ui/pyramidControls.js';
 import { applyAxisMaterial } from '../ui/axisControls.js';
 import {
   isEffectTransitioning,
   restoreGlowObjectVisibility
 } from './glowWireframeTransition.js';
+import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
+import { getMotionParticleVertexOpacity } from '../utils/motionParticleSettings.js';
 
-const DURATION = 1.6;
-const SETTLE_DURATION = 0.25;
-const CHARGE_END = 0.2;
-const DISSOLVE_START = 0.18;
-const DISSOLVE_SPAN = 0.72;
+// 显影 → 凝聚 → 定型
+const DURATION = 2.1;
+const SETTLE_DURATION = 0.3;
+
+const CHARGE_END = 0.15;
+const DISSOLVE_START = 0.15;
+const DISSOLVE_END = 0.85;
+const DISSOLVE_SPAN = DISSOLVE_END - DISSOLVE_START;
+const SOFT_FADE_START = 0.88;
 
 const PARTICLE_BASE_SIZE = 0.055;
-const PARTICLE_SHRINK_SIZE = 0.02;
+const PARTICLE_SWELL_SIZE = 0.058;
 const PARTICLE_BASE_OPACITY = 0.92;
 
 const REVEAL_THRESHOLD_SPAN = 0.55;
 const REVEAL_THRESHOLD_BASE = 0.08;
-const REVEAL_FADE_SPAN = 0.22;
+const REVEAL_FADE_SPAN = 0.28;
 
-const GLOW_DECOR_SHOW = 0.05;
-const GLOW_SLICE_LINES_SHOW = 0.08;
+const GLOW_DECOR_SHOW = 0.04;
+const GLOW_SLICE_LINES_SHOW = 0.05;
 
-const MOTION_PRERUN_START = 0.5;
-const MOTION_PRERUN_END = 0.75;
-const MOTION_RAMP_END = 0.9;
+const BLOOM_PEAK_RATIO = 1.06;
+const BLOOM_SETTLE_START = 0.78;
 
-function computeMotionWeight(progress) {
-  if (progress < MOTION_PRERUN_START) return 0;
-  if (progress < MOTION_PRERUN_END) {
-    return lerp(0, 0.1, smootherstep((progress - MOTION_PRERUN_START) / (MOTION_PRERUN_END - MOTION_PRERUN_START)));
+function computeDecorMotionWeight(progress) {
+  if (progress < 0.22) {
+    return lerp(0, 0.15, smootherstep(progress / 0.22));
   }
-  if (progress < MOTION_RAMP_END) {
-    return lerp(0.1, 0.6, smootherstep((progress - MOTION_PRERUN_END) / (MOTION_RAMP_END - MOTION_PRERUN_END)));
+  if (progress < 0.55) {
+    return lerp(0.15, 0.55, smootherstep((progress - 0.22) / 0.33));
   }
-  return lerp(0.6, 1, smootherstep((progress - MOTION_RAMP_END) / (1 - MOTION_RAMP_END)));
-}
-
-function advanceFlowClock(motionWeight) {
-  const elapsed = advanceParticleFlowClock(motionWeight);
-  updateParticleFlow(elapsed, { pulseWeight: motionWeight });
+  if (progress < 0.82) {
+    return lerp(0.55, 0.88, smootherstep((progress - 0.55) / 0.27));
+  }
+  return lerp(0.88, 1, smootherstep((progress - 0.82) / 0.18));
 }
 
 function clamp01(v) {
@@ -72,6 +73,15 @@ function layerFadeIn(progress, delay, span) {
   return smootherstep(clamp01((progress - delay) / span));
 }
 
+function dissolveProgressAt(progress) {
+  return clamp01((progress - DISSOLVE_START) / DISSOLVE_SPAN);
+}
+
+function softGroupFade(progress) {
+  if (progress <= SOFT_FADE_START) return 1;
+  return 1 - smootherstep((progress - SOFT_FADE_START) / (1 - SOFT_FADE_START));
+}
+
 function setParticleDissolveWeight(progress) {
   const geo = state.particleCloudGeo;
   const mat = state.pyramidMats.particleCloud;
@@ -81,11 +91,12 @@ function setParticleDissolveWeight(progress) {
   const colors = geo.attributes.color.array;
   const count = reveals.length;
   const globalOpacity = PARTICLE_BASE_OPACITY * state.pyramidBrightness;
+  const groupFade = softGroupFade(progress);
 
   if (progress < CHARGE_END) {
     const chargeT = smootherstep(progress / CHARGE_END);
-    mat.size = lerp(PARTICLE_BASE_SIZE, PARTICLE_BASE_SIZE * 1.08, chargeT);
-    mat.opacity = globalOpacity;
+    mat.size = lerp(PARTICLE_BASE_SIZE, PARTICLE_SWELL_SIZE, chargeT);
+    mat.opacity = globalOpacity * groupFade;
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
       colors[i3] = 1;
@@ -96,15 +107,14 @@ function setParticleDissolveWeight(progress) {
     return;
   }
 
-  const dissolveProgress = clamp01((progress - DISSOLVE_START) / DISSOLVE_SPAN);
-  const shrinkT = smootherstep(dissolveProgress);
-  mat.size = lerp(PARTICLE_BASE_SIZE, PARTICLE_SHRINK_SIZE, shrinkT);
-  mat.opacity = lerp(globalOpacity, globalOpacity * 0.35, smootherstep(clamp01((dissolveProgress - 0.35) / 0.65)));
+  const dissolveT = dissolveProgressAt(progress);
+  const swellHold = 1 - smootherstep(clamp01(dissolveT / 0.35));
+  mat.size = lerp(PARTICLE_BASE_SIZE, PARTICLE_SWELL_SIZE, swellHold * 0.65);
+  mat.opacity = globalOpacity * lerp(1, 0.12, smootherstep(clamp01((dissolveT - 0.5) / 0.5))) * groupFade;
 
   for (let i = 0; i < count; i++) {
-    const outerness = 1 - reveals[i];
-    const threshold = outerness * REVEAL_THRESHOLD_SPAN + REVEAL_THRESHOLD_BASE;
-    const alpha = 1 - smootherstep((dissolveProgress - threshold) / REVEAL_FADE_SPAN);
+    const threshold = reveals[i] * REVEAL_THRESHOLD_SPAN + REVEAL_THRESHOLD_BASE;
+    const alpha = 1 - smootherstep((dissolveT - threshold) / REVEAL_FADE_SPAN);
     const i3 = i * 3;
     colors[i3] = alpha;
     colors[i3 + 1] = alpha;
@@ -116,15 +126,14 @@ function setParticleDissolveWeight(progress) {
 
 function setGlowMaterializeWeight(progress) {
   const mats = state.pyramidMats;
-  const transformT = clamp01((progress - CHARGE_END) / (1 - CHARGE_END));
   const brightness = state.pyramidBrightness;
-  const motionWeight = computeMotionWeight(progress);
+  const decorMotion = computeDecorMotionWeight(progress);
 
-  const coreT = layerFadeIn(transformT, 0.02, 0.36);
-  const shellT = layerFadeIn(transformT, 0.14, 0.4);
-  const sliceT = layerFadeIn(transformT, 0.26, 0.4);
-  const decorT = layerFadeIn(transformT, 0.4, 0.44);
-  const decorOpacity = decorT * lerp(0.3, 1, smootherstep(clamp01(motionWeight / 0.6)));
+  const coreT = layerFadeIn(progress, 0.08, 0.42);
+  const shellT = layerFadeIn(progress, 0.12, 0.48);
+  const sliceT = layerFadeIn(progress, 0.22, 0.5);
+  const decorT = layerFadeIn(progress, 0.32, 0.52);
+  const decorOpacity = decorT * lerp(0.35, 1, smootherstep(clamp01(decorMotion / 0.55)));
 
   const applyPhysical = (mat, baseOpacity, emissiveScale, layerWeight) => {
     if (!mat) return;
@@ -171,8 +180,7 @@ function setGlowMaterializeWeight(progress) {
     mat.uniforms.uOpacity.value = getEdgeFlowOpacity(decorOpacity);
     mat.uniforms.uIntensity.value = getEdgeFlowInnerIntensity(decorOpacity);
   });
-  if (mats.particles) mats.particles.opacity = 0.95 * decorOpacity;
-  if (mats.vertex) mats.vertex.opacity = decorOpacity;
+  if (mats.vertex) mats.vertex.opacity = getMotionParticleVertexOpacity() * decorOpacity;
 
   syncGlowMaterializeVisibility(coreT, shellT, sliceT, decorT);
 }
@@ -182,7 +190,7 @@ function syncGlowMaterializeVisibility(coreT, shellT, sliceT, decorT) {
   const glow = state.pyramidGroups.glow;
   if (!objects || !glow) return;
 
-  glow.visible = coreT > 0.006 || shellT > 0.006 || sliceT > 0.006 || decorT > 0.006;
+  glow.visible = coreT > 0.004 || shellT > 0.004 || sliceT > 0.004 || decorT > 0.004;
 
   objects.meshes.forEach((mesh) => {
     mesh.visible = true;
@@ -198,22 +206,38 @@ function syncGlowMaterializeVisibility(coreT, shellT, sliceT, decorT) {
 
   const showDecor = decorT > GLOW_DECOR_SHOW;
   if (objects.edgeGlowTubes) objects.edgeGlowTubes.tubeGroup.visible = showDecor;
-  if (objects.internalPoints) objects.internalPoints.visible = showDecor;
   if (objects.vertexPoints) objects.vertexPoints.visible = showDecor;
 }
 
 function applyBloomForTransition(progress) {
   if (!state.bloomPass) return;
   const fullBloom = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
-  const chargeBloom = fullBloom * 1.1;
+  const peakBloom = fullBloom * BLOOM_PEAK_RATIO;
 
   if (progress < CHARGE_END) {
-    state.bloomPass.strength = lerp(fullBloom, chargeBloom, smootherstep(progress / CHARGE_END));
+    state.bloomPass.strength = lerp(fullBloom, peakBloom, smootherstep(progress / CHARGE_END));
     return;
   }
 
-  const settleT = smootherstep(clamp01((progress - 0.5) / 0.5));
-  state.bloomPass.strength = lerp(chargeBloom, fullBloom, settleT);
+  if (progress < BLOOM_SETTLE_START) {
+    state.bloomPass.strength = peakBloom;
+    return;
+  }
+
+  const settleT = smootherstep(clamp01((progress - BLOOM_SETTLE_START) / (1 - BLOOM_SETTLE_START)));
+  state.bloomPass.strength = lerp(peakBloom, fullBloom, settleT);
+}
+
+function applySettlePhase(settleT) {
+  const mat = state.pyramidMats.particleCloud;
+  if (mat) {
+    mat.opacity = lerp(mat.opacity, 0, smootherstep(settleT));
+  }
+
+  if (state.bloomPass) {
+    const fullBloom = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
+    state.bloomPass.strength = lerp(state.bloomPass.strength, fullBloom, smootherstep(settleT));
+  }
 }
 
 function setTransitionButtonBusy(busy) {
@@ -236,21 +260,23 @@ function restoreGlowMaterialFlags() {
 function finishTransition() {
   state.pyramidEffectMode = PYRAMID_EFFECT_MODES.GLOW;
   state.effectTransition = null;
+  state.motionParticleGoldWeight = 1;
 
-  const { glow, particles } = state.pyramidGroups;
+  const { particles } = state.pyramidGroups;
   if (particles) particles.visible = false;
 
   const mat = state.pyramidMats.particleCloud;
   if (mat) {
     mat.size = PARTICLE_BASE_SIZE;
+    mat.opacity = PARTICLE_BASE_OPACITY * state.pyramidBrightness;
   }
   resetParticleCloudColors();
+  applyMotionParticleColors(1);
 
   restoreGlowMaterialFlags();
   restoreGlowObjectVisibility();
   applyPyramidColorAndBrightness();
   applyAxisMaterial();
-  stampParticleFlowClock();
 
   document.getElementById('effect-glow-btn').classList.toggle('active', true);
   document.getElementById('effect-wireframe-btn').classList.toggle('active', false);
@@ -280,9 +306,6 @@ export function startParticleGlowTransition() {
   setGlowMaterializeWeight(0);
   setParticleDissolveWeight(0);
 
-  syncParticleFlowClock();
-  updateParticleFlow(state.particleFlowElapsed, { pulseWeight: 0 });
-
   const now = state.clock.getElapsedTime();
   state.effectTransition = {
     active: true,
@@ -302,8 +325,9 @@ export function updateParticleGlowTransition() {
   if (!tr?.active || tr.kind !== 'particleGlow' || !state.clock) return;
 
   if (tr.settling) {
-    advanceFlowClock(1);
     const settleElapsed = state.clock.getElapsedTime() - tr.settleStart;
+    const settleT = clamp01(settleElapsed / SETTLE_DURATION);
+    applySettlePhase(settleT);
     if (settleElapsed >= SETTLE_DURATION) {
       finishTransition();
     }
@@ -312,9 +336,7 @@ export function updateParticleGlowTransition() {
 
   const elapsed = state.clock.getElapsedTime() - tr.startTime;
   const progress = clamp01(elapsed / tr.duration);
-  const motionWeight = computeMotionWeight(progress);
 
-  advanceFlowClock(motionWeight);
   setParticleDissolveWeight(progress);
   setGlowMaterializeWeight(progress);
   applyBloomForTransition(progress);
@@ -322,7 +344,6 @@ export function updateParticleGlowTransition() {
   if (progress >= 1) {
     tr.settling = true;
     tr.settleStart = state.clock.getElapsedTime();
-    stampParticleFlowClock();
   }
 }
 
