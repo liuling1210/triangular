@@ -1,6 +1,6 @@
 import { SHOW_LABELS } from '../config/constants.js';
 import { state } from '../state/appState.js';
-import { createPyramid, updateParticleFlow } from '../scene/pyramid.js';
+import { createPyramid, advanceParticleFlowClock, updateParticleFlow, updateEdgeFlow } from '../scene/pyramid.js';
 import { createCircularGrid } from '../scene/grid.js';
 import { createLabels } from '../scene/labels.js';
 import { setupLights } from '../scene/lights.js';
@@ -9,6 +9,22 @@ import { setupPostProcessing, updateFxaaResolution } from '../postprocessing/set
 import { applyPyramidColorAndBrightness, setupColorBrightnessUI } from '../ui/pyramidControls.js';
 import { applyAxisMaterial, setupAxisUI } from '../ui/axisControls.js';
 import { setupSliceGradientUI } from '../ui/sliceControls.js';
+import { setupEdgeFlowUI } from '../ui/edgeFlowControls.js';
+import { setupPanelSections } from '../ui/panelSections.js';
+import { setupEffectUI } from '../ui/effectControls.js';
+import {
+  setupGlowWireTransitionUI,
+  updateGlowWireTransition,
+  isEffectTransitioning
+} from '../transitions/glowWireframeTransition.js';
+import {
+  setupWireParticleTransitionUI,
+  updateWireParticleTransition
+} from '../transitions/wireframeParticleTransition.js';
+import {
+  setupParticleGlowTransitionUI,
+  updateParticleGlowTransition
+} from '../transitions/particleGlowTransition.js';
 
 function onWindowResize() {
   state.camera.aspect = window.innerWidth / window.innerHeight;
@@ -22,7 +38,16 @@ function onWindowResize() {
 function animate() {
   requestAnimationFrame(animate);
   state.controls.update();
-  updateParticleFlow(state.clock.getElapsedTime());
+  if (!isEffectTransitioning()) {
+    const elapsed = advanceParticleFlowClock(1);
+    updateParticleFlow(elapsed);
+  }
+  if (state.clock) {
+    updateEdgeFlow(state.clock.getElapsedTime());
+  }
+  updateGlowWireTransition();
+  updateWireParticleTransition();
+  updateParticleGlowTransition();
   state.composer.render();
   if (SHOW_LABELS) state.labelRenderer.render(state.scene, state.camera);
 }
@@ -65,9 +90,15 @@ function init() {
   setupLights();
   setupPostProcessing();
   setupControls();
+  setupPanelSections();
   setupColorBrightnessUI(applyAxisMaterial);
+  setupEdgeFlowUI();
   setupAxisUI();
   setupSliceGradientUI();
+  setupEffectUI();
+  setupGlowWireTransitionUI();
+  setupWireParticleTransitionUI();
+  setupParticleGlowTransitionUI();
   applyPyramidColorAndBrightness();
   applyAxisMaterial();
 

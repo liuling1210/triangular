@@ -42,9 +42,30 @@ export const RENDER_ORDER = {
   sliceEdge: 10
 };
 
+export const EDGE_FLOW = {
+  outerRadius: 0.024,
+  innerRadius: 0.005,
+  tubularSegments: 96,
+  radialSegments: 8,
+  speed: 0.32,
+  baseOpacity: 0.95
+};
+
+export const DEFAULT_EDGE_FLOW_SETTINGS = {
+  speed: EDGE_FLOW.speed,
+  opacity: EDGE_FLOW.baseOpacity,
+  intensity: 1,
+  innerIntensityRatio: 1.15,
+  bandWidth: 0.12,
+  outerRadius: EDGE_FLOW.outerRadius,
+  innerRadius: EDGE_FLOW.innerRadius
+};
+
 export const PARTICLE_RISE_SPEED = 0.18;
+export const SOLID_BOTTOM_HEIGHT = 0.1;
 export const R = 2.0;
 export const H = 3.0;
+export const PYRAMID_EFFECT_MODES = { GLOW: 'glow', WIREFRAME: 'wireframe', PARTICLES: 'particles' };
 export const SHAFT_RADIUS = 0.05;
 export const SHAFT_CYL_HEIGHT = H - 0.2;
 export const SHAFT_TIP_HEIGHT = 0.2;

@@ -3,7 +3,9 @@ import {
   DEFAULT_BRIGHTNESS,
   DEFAULT_SLICE_GRADIENTS,
   DEFAULT_SLICE_OPACITY,
-  DEFAULT_AXIS_SETTINGS
+  DEFAULT_AXIS_SETTINGS,
+  DEFAULT_EDGE_FLOW_SETTINGS,
+  PYRAMID_EFFECT_MODES
 } from '../config/constants.js';
 
 export const state = {
@@ -12,6 +14,10 @@ export const state = {
   sliceGradients: DEFAULT_SLICE_GRADIENTS.map((g) => ({ ...g })),
   sliceOpacity: { ...DEFAULT_SLICE_OPACITY },
   axisSettings: { ...DEFAULT_AXIS_SETTINGS },
+  edgeFlowSettings: { ...DEFAULT_EDGE_FLOW_SETTINGS },
+  pyramidEffectMode: PYRAMID_EFFECT_MODES.GLOW,
+  pyramidGroups: { glow: null, wireframe: null, particles: null },
+  glowObjects: null,
   pyramidMats: {},
   pyramidLights: {},
   bloomPass: null,
@@ -19,14 +25,19 @@ export const state = {
   labelElements: [],
   clock: null,
   pyramidApex: null,
+  pyramidBaseVerts: null,
   internalParticleGeo: null,
   internalParticleStreams: [],
   vertexParticleGeo: null,
   vertexParticleStreams: [],
+  particleCloudGeo: null,
+  particleFlowElapsed: null,
+  particleFlowLastUpdate: null,
   scene: null,
   camera: null,
   renderer: null,
   labelRenderer: null,
   controls: null,
-  composer: null
+  composer: null,
+  effectTransition: null
 };

@@ -6,6 +6,7 @@ import {
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import { createGlowTexture } from '../utils/color.js';
+import { applyEdgeFlowAppearance } from './edgeFlowControls.js';
 import { applySliceGradients } from './sliceControls.js';
 
 export function applyPyramidColorAndBrightness() {
@@ -29,9 +30,10 @@ export function applyPyramidColorAndBrightness() {
     pyramidMats.base.emissive.copy(emissiveColor);
     pyramidMats.base.emissiveIntensity = BASE_EMISSIVE.base * state.pyramidBrightness;
   }
-  if (pyramidMats.edge) pyramidMats.edge.color.copy(threeColor);
+  applyEdgeFlowAppearance();
   applySliceGradients();
   if (pyramidMats.particles) pyramidMats.particles.color.copy(threeColor);
+  if (pyramidMats.particleCloud) pyramidMats.particleCloud.color.copy(threeColor);
   if (pyramidMats.vertex) pyramidMats.vertex.color.copy(threeColor);
 
   if (pyramidLights.core) {
@@ -60,6 +62,13 @@ export function applyPyramidColorAndBrightness() {
     if (pyramidMats.particles.map) pyramidMats.particles.map.dispose();
     pyramidMats.particles.map = glowTexSoft;
     pyramidMats.particles.needsUpdate = true;
+  }
+  if (pyramidMats.particleCloud) {
+    pyramidMats.particleCloud.color.copy(threeColor);
+    pyramidMats.particleCloud.opacity = 0.92 * state.pyramidBrightness;
+    if (pyramidMats.particleCloud.map) pyramidMats.particleCloud.map.dispose();
+    pyramidMats.particleCloud.map = glowTexBright;
+    pyramidMats.particleCloud.needsUpdate = true;
   }
 
   const r = Math.round(threeColor.r * 255);

@@ -9,7 +9,7 @@ import {
   SHAFT_RADIUS,
   SHAFT_CYL_HEIGHT,
   SHAFT_TIP_HEIGHT,
-  PYRAMID_Y_OFFSET
+  SOLID_BOTTOM_HEIGHT
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import { createGlowTexture } from '../utils/color.js';
@@ -25,6 +25,9 @@ import {
   clipInnerEdgeStart
 } from '../utils/geometry.js';
 import { createGradientSliceMaterial } from '../materials/sliceMaterial.js';
+import { createWireframePyramid } from './wireframePyramid.js';
+import { createParticlePyramid } from './particlePyramid.js';
+import { createEdgeGlowTubes } from './edgeGlowTubes.js';
 
 function encodeParticleStream(x, y, z, phase) {
   const angle = Math.atan2(z, x);
@@ -97,17 +100,33 @@ function createInternalParticles(group, apex, baseVerts, sliceHeights) {
   const internalPoints = new THREE.Points(pGeo, pMat);
   internalPoints.renderOrder = RENDER_ORDER.particles;
   group.add(internalPoints);
+  return internalPoints;
 }
 
 export function createPyramid() {
-  const group = new THREE.Group();
-  state.scene.add(group);
+  const glowGroup = new THREE.Group();
+  const wireframeGroup = new THREE.Group();
+  const particleGroup = new THREE.Group();
+  state.pyramidGroups = { glow: glowGroup, wireframe: wireframeGroup, particles: particleGroup };
+  state.glowObjects = {
+    edgeGlowTubes: null,
+    vertexPoints: null,
+    internalPoints: null,
+    sliceEdgeLines: [],
+    sliceInnerEdgeLines: [],
+    meshes: []
+  };
+  state.scene.add(glowGroup);
+  state.scene.add(wireframeGroup);
+  state.scene.add(particleGroup);
+  wireframeGroup.visible = false;
+  particleGroup.visible = false;
 
   const coneGeo = createPyramidConeGeo();
   const { apex, baseVerts } = extractPyramidKeyPoints(coneGeo);
   state.pyramidApex = apex;
+  state.pyramidBaseVerts = baseVerts.map((v) => v.clone());
   const sliceHeights = [H / 3, (2 * H) / 3];
-  const SOLID_BOTTOM_HEIGHT = 0.1;
 
   const bottomR = radiusAtHeight(SOLID_BOTTOM_HEIGHT);
   const bottomFrustumGeo = new THREE.CylinderGeometry(bottomR, R, SOLID_BOTTOM_HEIGHT, 3, 1, true);
@@ -125,7 +144,8 @@ export function createPyramid() {
   const bottomMesh = new THREE.Mesh(bottomFrustumGeo, solidGoldMat);
   bottomMesh.position.y = SOLID_BOTTOM_HEIGHT / 2;
   bottomMesh.renderOrder = RENDER_ORDER.solid;
-  group.add(bottomMesh);
+  glowGroup.add(bottomMesh);
+  state.glowObjects.meshes.push(bottomMesh);
 
   const shellHeight = H - SOLID_BOTTOM_HEIGHT;
   const shellBottomR = radiusAtHeight(SOLID_BOTTOM_HEIGHT);
@@ -150,7 +170,8 @@ export function createPyramid() {
   const fullShell = new THREE.Mesh(shellConeGeo, shellMat);
   fullShell.position.y = SOLID_BOTTOM_HEIGHT + shellHeight / 2;
   fullShell.renderOrder = RENDER_ORDER.shell;
-  group.add(fullShell);
+  glowGroup.add(fullShell);
+  state.glowObjects.meshes.push(fullShell);
 
   state.pyramidMats.planes = [];
   state.pyramidMats.sliceEdges = [];
@@ -166,7 +187,8 @@ export function createPyramid() {
     const plane = new THREE.Mesh(createTriangleGeo(sv[0], sv[1], sv[2]), mat);
     plane.renderOrder = RENDER_ORDER.slicePlane;
     plane.frustumCulled = false;
-    group.add(plane);
+    glowGroup.add(plane);
+    state.glowObjects.meshes.push(plane);
 
     const sliceEdgeGeo = new THREE.BufferGeometry().setFromPoints([
       sv[0], sv[1], sv[1], sv[2], sv[2], sv[0]
@@ -182,7 +204,8 @@ export function createPyramid() {
     state.pyramidMats.sliceEdges.push(sliceEdgeMat);
     const sliceEdge = new THREE.LineSegments(sliceEdgeGeo, sliceEdgeMat);
     sliceEdge.renderOrder = RENDER_ORDER.sliceEdge;
-    group.add(sliceEdge);
+    glowGroup.add(sliceEdge);
+    state.glowObjects.sliceEdgeLines.push(sliceEdge);
 
     const innerStarts = sv.map((v) => clipInnerEdgeStart(centroid, v));
     const innerEdgeGeo = new THREE.BufferGeometry().setFromPoints([
@@ -199,7 +222,8 @@ export function createPyramid() {
     state.pyramidMats.sliceInnerEdges.push(innerEdgeMat);
     const innerEdge = new THREE.LineSegments(innerEdgeGeo, innerEdgeMat);
     innerEdge.renderOrder = RENDER_ORDER.sliceInnerEdge;
-    group.add(innerEdge);
+    glowGroup.add(innerEdge);
+    state.glowObjects.sliceInnerEdgeLines.push(innerEdge);
   });
 
   const baseGeo = new THREE.CylinderGeometry(R, R, 0.04, 3);
@@ -218,7 +242,8 @@ export function createPyramid() {
   const baseMesh = new THREE.Mesh(baseGeo, baseMat);
   baseMesh.position.y = -0.02;
   baseMesh.renderOrder = RENDER_ORDER.base;
-  group.add(baseMesh);
+  glowGroup.add(baseMesh);
+  state.glowObjects.meshes.push(baseMesh);
 
   const axisMat = new THREE.MeshPhysicalMaterial({
     color: DEFAULT_AXIS_SETTINGS.color,
@@ -252,20 +277,13 @@ export function createPyramid() {
   tipMesh.position.y = SHAFT_CYL_HEIGHT + SHAFT_TIP_HEIGHT / 2;
   tipMesh.renderOrder = RENDER_ORDER.axis;
   axisShaft.add(tipMesh);
-  group.add(axisShaft);
+  glowGroup.add(axisShaft);
+  state.glowObjects.meshes.push(cylMesh, tipMesh);
 
-  const edgeMat = new THREE.LineBasicMaterial({
-    color: DEFAULT_PYRAMID_COLOR,
-    transparent: true,
-    opacity: 0.95,
-    blending: THREE.AdditiveBlending
-  });
-  state.pyramidMats.edge = edgeMat;
-  const edgeWireGeo = new THREE.WireframeGeometry(coneGeo);
-  const edgeLines = new THREE.LineSegments(edgeWireGeo, edgeMat);
-  edgeLines.position.y = PYRAMID_Y_OFFSET;
-  edgeLines.renderOrder = RENDER_ORDER.edge;
-  group.add(edgeLines);
+  const edgeGlow = createEdgeGlowTubes(glowGroup, apex, baseVerts);
+  state.glowObjects.edgeGlowTubes = edgeGlow;
+  state.pyramidMats.edgeFlowOuter = edgeGlow.outerMats;
+  state.pyramidMats.edgeFlowInner = edgeGlow.innerMats;
 
   const vertexPositions = [];
   baseVerts.forEach((v) => vertexPositions.push(v.x, v.y + 0.02, v.z));
@@ -294,12 +312,50 @@ export function createPyramid() {
   state.pyramidMats.vertex = vertexMat;
   const vertexPoints = new THREE.Points(vertexGeo, vertexMat);
   vertexPoints.renderOrder = RENDER_ORDER.particles;
-  group.add(vertexPoints);
+  glowGroup.add(vertexPoints);
+  state.glowObjects.vertexPoints = vertexPoints;
 
-  createInternalParticles(group, apex, baseVerts, sliceHeights);
+  state.glowObjects.internalPoints = createInternalParticles(glowGroup, apex, baseVerts, sliceHeights);
+  createWireframePyramid(wireframeGroup, apex, baseVerts, sliceHeights);
+  createParticlePyramid(particleGroup, apex, baseVerts, sliceHeights);
 }
 
-export function updateParticleFlow(elapsed) {
+export function updateEdgeFlow(elapsed) {
+  const { edgeFlowOuter, edgeFlowInner } = state.pyramidMats;
+  edgeFlowOuter?.forEach((mat) => {
+    mat.uniforms.uTime.value = elapsed;
+  });
+  edgeFlowInner?.forEach((mat) => {
+    mat.uniforms.uTime.value = elapsed;
+  });
+}
+
+export function syncParticleFlowClock() {
+  const now = state.clock.getElapsedTime();
+  if (state.particleFlowElapsed == null) {
+    state.particleFlowElapsed = now;
+  }
+  if (state.particleFlowLastUpdate == null) {
+    state.particleFlowLastUpdate = now;
+  }
+  return now;
+}
+
+export function advanceParticleFlowClock(speedScale = 1) {
+  const now = syncParticleFlowClock();
+  const delta = now - state.particleFlowLastUpdate;
+  state.particleFlowLastUpdate = now;
+  state.particleFlowElapsed += delta * speedScale;
+  return state.particleFlowElapsed;
+}
+
+export function stampParticleFlowClock() {
+  state.particleFlowLastUpdate = state.clock.getElapsedTime();
+}
+
+export function updateParticleFlow(elapsed, options = {}) {
+  const pulseWeight = clamp01(options.pulseWeight ?? 1);
+
   if (state.internalParticleGeo && state.internalParticleStreams.length) {
     const pos = state.internalParticleGeo.attributes.position.array;
     const colors = state.internalParticleGeo.attributes.color.array;
@@ -313,7 +369,8 @@ export function updateParticleFlow(elapsed) {
       pos[i3] = r * Math.cos(s.angle);
       pos[i3 + 1] = y;
       pos[i3 + 2] = r * Math.sin(s.angle);
-      const fade = 0.4 + 0.6 * Math.sin(Math.PI * t);
+      const sinFade = 0.4 + 0.6 * Math.sin(Math.PI * t);
+      const fade = neutralFade(sinFade, 0.65, pulseWeight);
       colors[i3] = fade;
       colors[i3 + 1] = fade;
       colors[i3 + 2] = fade;
@@ -332,7 +389,8 @@ export function updateParticleFlow(elapsed) {
       pos[i3] = s.startX + (state.pyramidApex.x - s.startX) * t;
       pos[i3 + 1] = s.startY + (state.pyramidApex.y - s.startY) * t;
       pos[i3 + 2] = s.startZ + (state.pyramidApex.z - s.startZ) * t;
-      const fade = 0.45 + 0.55 * Math.sin(Math.PI * t);
+      const sinFade = 0.45 + 0.55 * Math.sin(Math.PI * t);
+      const fade = neutralFade(sinFade, 0.65, pulseWeight);
       colors[i3] = fade;
       colors[i3 + 1] = fade;
       colors[i3 + 2] = fade;
@@ -340,4 +398,12 @@ export function updateParticleFlow(elapsed) {
     state.vertexParticleGeo.attributes.position.needsUpdate = true;
     state.vertexParticleGeo.attributes.color.needsUpdate = true;
   }
+}
+
+function clamp01(v) {
+  return Math.max(0, Math.min(1, v));
+}
+
+function neutralFade(sinFade, neutral, pulseWeight) {
+  return neutral + (sinFade - neutral) * pulseWeight;
 }
