@@ -37,6 +37,7 @@ export function createGridRevealMaterial(startAngle = 0) {
       uStartAngle: { value: startAngle },
       uDashLength: { value: 0.1 },
       uDashRatio: { value: 0.48 },
+      uOuterRingSolidMix: { value: 0 },
       uRevealOpacity: { value: 1 }
     },
     vertexShader: `
@@ -64,6 +65,7 @@ export function createGridRevealMaterial(startAngle = 0) {
       uniform float uStartAngle;
       uniform float uDashLength;
       uniform float uDashRatio;
+      uniform float uOuterRingSolidMix;
       uniform float uRevealOpacity;
 
       varying vec3 vWorldPos;
@@ -117,9 +119,10 @@ export function createGridRevealMaterial(startAngle = 0) {
 
         if (onOuterRing) {
           bool swept = inOuterSweep(angleCCW);
-          if (!swept && uOuterRingSweepAngle <= 0.001) discard;
+          bool fullRing = uOuterRingSweepAngle >= TAU - 0.001;
+          if (!swept && !fullRing) discard;
           onLine = 1.0;
-          solidMix = swept ? 1.0 : 0.0;
+          solidMix = uOuterRingSolidMix;
           dashCoord = angleCCW * max(uOuterRingR, 0.001);
         } else if (onInnerRing || onRadial) {
           if (uInnerRevealRadius <= 0.001) discard;
@@ -129,13 +132,13 @@ export function createGridRevealMaterial(startAngle = 0) {
             if (ringMask <= 0.001) discard;
             onLine = 1.0;
             lineAlpha = ringMask;
-            dashCoord = angleCCW * max(hitRingR, 0.001);
+            solidMix = 1.0;
           } else if (onRadial) {
             float radialMask = 1.0 - smoothstep(uInnerRevealRadius - halfWidth * 2.0, uInnerRevealRadius + halfWidth, r);
             if (radialMask <= 0.001) discard;
             onLine = 1.0;
             lineAlpha = radialMask;
-            dashCoord = r;
+            solidMix = 1.0;
           }
         }
 
@@ -146,7 +149,7 @@ export function createGridRevealMaterial(startAngle = 0) {
           if (phase >= uDashLength * uDashRatio) discard;
         }
 
-        float alpha = mix(uOpacity * 0.18, uOpacity, solidMix) * uRevealOpacity * lineAlpha;
+        float alpha = mix(uOpacity * 0.45, uOpacity, solidMix) * uRevealOpacity * lineAlpha;
         gl_FragColor = vec4(uColor, alpha);
       }
     `,
@@ -176,16 +179,31 @@ export function syncGridRevealUniforms(material) {
 export function setGridRevealOuterSweep(material, contourProgress) {
   if (!material?.uniforms) return;
   material.uniforms.uOuterRingSweepAngle.value = clamp01(contourProgress) * TAU;
+  material.uniforms.uOuterRingSolidMix.value = 0;
 }
+
+function smootherstep(t) {
+  t = clamp01(t);
+  return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+/** 内圈揭示抵达外圈时，外圈由虚线渐变为实线 */
+const OUTER_RING_SOLID_START = 0.9;
 
 export function setGridRevealInnerRadius(material, innerProgress) {
   if (!material?.uniforms) return;
   syncGridDerivedSettings(state.gridSettings);
   const maxR = state.gridSettings.maxRadius;
-  material.uniforms.uInnerRevealRadius.value = clamp01(innerProgress) * maxR;
-  if (clamp01(innerProgress) > 0.001) {
+  const p = clamp01(innerProgress);
+  material.uniforms.uInnerRevealRadius.value = p * maxR;
+  if (p > 0.001) {
     material.uniforms.uOuterRingSweepAngle.value = TAU;
   }
+
+  const solidT = p >= 0.999
+    ? 1
+    : smootherstep(clamp01((p - OUTER_RING_SOLID_START) / (1 - OUTER_RING_SOLID_START)));
+  material.uniforms.uOuterRingSolidMix.value = solidT;
 }
 
 /** @deprecated use setGridRevealOuterSweep */

@@ -1,8 +1,7 @@
 import {
   BASE_TONE_EXPOSURE,
   BASE_BLOOM_STRENGTH,
-  BASE_LIGHT_INTENSITIES,
-  BASE_EMISSIVE
+  BASE_LIGHT_INTENSITIES
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import {
@@ -11,19 +10,14 @@ import {
 import { applyEdgeFlowAppearance } from './edgeFlowControls.js';
 import { applyFootMaterial } from './footControls.js';
 import { applyMotionParticleAppearance } from './motionParticleControls.js';
+import { applyShellMaterial } from './shellControls.js';
 import { applySliceGradients } from './sliceControls.js';
 
 export function applyPyramidColorAndBrightness() {
   const threeColor = new THREE.Color(state.pyramidColorHex);
-  const shellColor = threeColor.clone().multiplyScalar(0.62);
-  const emissiveColor = threeColor.clone().multiplyScalar(0.25);
   const { pyramidMats, pyramidLights } = state;
 
-  if (pyramidMats.shell) {
-    pyramidMats.shell.color.copy(shellColor);
-    pyramidMats.shell.emissive.copy(emissiveColor.clone().multiplyScalar(0.4));
-    pyramidMats.shell.emissiveIntensity = BASE_EMISSIVE.shell * state.pyramidBrightness;
-  }
+  applyShellMaterial();
   applyFootMaterial();
   applyEdgeFlowAppearance();
   applySliceGradients();

@@ -1,7 +1,6 @@
 import {
   PYRAMID_EFFECT_MODES,
-  BASE_BLOOM_STRENGTH,
-  BASE_EMISSIVE
+  BASE_BLOOM_STRENGTH
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import {
@@ -18,6 +17,7 @@ import {
 } from './glowWireframeTransition.js';
 import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
 import { getFootEmissiveIntensity } from '../ui/footControls.js';
+import { getShellEmissiveIntensity, getShellOpacity } from '../ui/shellControls.js';
 
 // 显影 → 凝聚 → 定型
 const DURATION = 2.1;
@@ -155,7 +155,7 @@ function setGlowMaterializeWeight(progress) {
     mats.axis.emissiveIntensity = state.axisSettings.emissiveIntensity * coreT;
   }
 
-  applyPhysical(mats.shell, 0.42, BASE_EMISSIVE.shell, shellT);
+  applyPhysical(mats.shell, getShellOpacity(), getShellEmissiveIntensity(), shellT);
 
   if (mats.planes) {
     mats.planes.forEach((mat) => {

@@ -5,11 +5,13 @@ import {
   DEFAULT_SLICE_OPACITY,
   DEFAULT_AXIS_SETTINGS,
   DEFAULT_FOOT_SETTINGS,
+  DEFAULT_SHELL_SETTINGS,
   DEFAULT_EDGE_FLOW_SETTINGS,
   DEFAULT_GRID_SETTINGS,
   DEFAULT_MOTION_PARTICLE_SETTINGS,
   DEFAULT_STRATEGIC_LABEL_POSITIONS,
   DEFAULT_STRATEGIC_LABEL_FONT_SIZE,
+  DEFAULT_STRATEGIC_APEX_BG,
   PYRAMID_EFFECT_MODES
 } from '../config/constants.js';
 
@@ -20,6 +22,7 @@ export const state = {
   sliceOpacity: { ...DEFAULT_SLICE_OPACITY },
   axisSettings: { ...DEFAULT_AXIS_SETTINGS },
   footSettings: { ...DEFAULT_FOOT_SETTINGS },
+  shellSettings: { ...DEFAULT_SHELL_SETTINGS },
   edgeFlowSettings: { ...DEFAULT_EDGE_FLOW_SETTINGS },
   motionParticleSettings: { ...DEFAULT_MOTION_PARTICLE_SETTINGS },
   gridSettings: { ...DEFAULT_GRID_SETTINGS },
@@ -27,6 +30,10 @@ export const state = {
     Object.entries(DEFAULT_STRATEGIC_LABEL_POSITIONS).map(([key, position]) => [key, { ...position }])
   ),
   strategicLabelFontSize: DEFAULT_STRATEGIC_LABEL_FONT_SIZE,
+  strategicApexBg: {
+    width: DEFAULT_STRATEGIC_APEX_BG.width,
+    position: { ...DEFAULT_STRATEGIC_APEX_BG.position }
+  },
   gridGroup: null,
   gridMaterial: null,
   gridRevealGroup: null,
@@ -34,6 +41,8 @@ export const state = {
   pyramidEffectMode: PYRAMID_EFFECT_MODES.GLOW,
   motionParticleGoldWeight: 1,
   pyramidGroups: { glow: null, wireframe: null, particles: null, flow: null },
+  pyramidRootGroup: null,
+  pyramidAutoRotate: false,
   glowObjects: null,
   pyramidMats: {},
   pyramidLights: {},
@@ -42,7 +51,7 @@ export const state = {
   labelElements: [],
   strategicLabels: [],
   baseCornerMarkers: [],
-  showCornerMarkers: true,
+  showCornerMarkers: false,
   clock: null,
   pyramidApex: null,
   pyramidBaseVerts: null,

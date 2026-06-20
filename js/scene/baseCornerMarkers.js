@@ -23,7 +23,7 @@ export function createBaseCornerMarkers(baseVerts) {
 
     const label = new THREE.CSS2DObject(div);
     label.position.copy(position);
-    state.scene.add(label);
+    (state.pyramidRootGroup ?? state.scene).add(label);
 
     state.baseCornerMarkers.push({
       index: i + 1,
@@ -33,23 +33,17 @@ export function createBaseCornerMarkers(baseVerts) {
       element: div
     });
   });
+
+  applyCornerMarkersVisibility();
 }
 
 export function applyCornerMarkersVisibility() {
   state.baseCornerMarkers.forEach((marker) => {
-    if (!state.showCornerMarkers) {
-      marker.element.style.opacity = '0';
-    }
+    marker.element.style.opacity = state.showCornerMarkers ? '1' : '0';
   });
 }
 
 export function setCornerMarkersVisible(visible) {
   state.showCornerMarkers = visible;
-  if (visible) {
-    state.baseCornerMarkers.forEach((marker) => {
-      marker.element.style.opacity = '1';
-    });
-  } else {
-    applyCornerMarkersVisibility();
-  }
+  applyCornerMarkersVisibility();
 }

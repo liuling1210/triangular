@@ -1,10 +1,12 @@
 import {
+  STRATEGIC_APEX_BG_RANGE,
   STRATEGIC_LABEL_FONT_SIZE_RANGE,
   STRATEGIC_LABEL_ITEMS,
   STRATEGIC_LABEL_SCREEN_RANGE
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import {
+  applyStrategicApexBgSettings,
   applyStrategicLabelFontSize,
   applyStrategicLabelPositions
 } from '../scene/strategicLabels.js';
@@ -23,11 +25,54 @@ function valueId(key, axis) {
   return `strategic-label-${key}-${axis}-val`;
 }
 
+function apexBgSliderId(axis) {
+  return `strategic-apex-bg-${axis}-slider`;
+}
+
+function apexBgValueId(axis) {
+  return `strategic-apex-bg-${axis}-val`;
+}
+
 function syncFontSizeControl() {
   const slider = document.getElementById('strategic-label-font-size-slider');
   const label = document.getElementById('strategic-label-font-size-val');
   if (slider) slider.value = state.strategicLabelFontSize;
   if (label) label.textContent = `${state.strategicLabelFontSize}px`;
+}
+
+function syncApexBgControlValues() {
+  const { width, position } = state.strategicApexBg;
+  const widthSlider = document.getElementById('strategic-apex-bg-width-slider');
+  const widthLabel = document.getElementById('strategic-apex-bg-width-val');
+  if (widthSlider) widthSlider.value = width;
+  if (widthLabel) widthLabel.textContent = `${Math.round(width)}px`;
+
+  AXES.forEach((axis) => {
+    const slider = document.getElementById(apexBgSliderId(axis));
+    const label = document.getElementById(apexBgValueId(axis));
+    if (slider) slider.value = Math.round(position[axis] * 10);
+    if (label) label.textContent = formatScreenValue(position[axis]);
+  });
+}
+
+function applyApexBgWidth(rawValue) {
+  const range = STRATEGIC_APEX_BG_RANGE.width;
+  const value = Math.max(range.min, Math.min(range.max, Math.round(rawValue)));
+  state.strategicApexBg.width = value;
+  applyStrategicApexBgSettings();
+
+  const label = document.getElementById('strategic-apex-bg-width-val');
+  if (label) label.textContent = `${value}px`;
+}
+
+function applyApexBgPosition(axis, rawValue) {
+  const range = STRATEGIC_LABEL_SCREEN_RANGE[axis];
+  const value = Math.max(range.min, Math.min(range.max, rawValue / 10));
+  state.strategicApexBg.position[axis] = value;
+  applyStrategicApexBgSettings();
+
+  const label = document.getElementById(apexBgValueId(axis));
+  if (label) label.textContent = formatScreenValue(value);
 }
 
 function syncLabelControlValues() {
@@ -41,6 +86,7 @@ function syncLabelControlValues() {
     });
   });
   syncFontSizeControl();
+  syncApexBgControlValues();
 }
 
 function applyAxisValue(key, axis, rawValue) {
@@ -81,6 +127,22 @@ export function setupStrategicLabelUI() {
     });
   }
 
+  const widthSlider = document.getElementById('strategic-apex-bg-width-slider');
+  if (widthSlider) {
+    widthSlider.addEventListener('input', (event) => {
+      applyApexBgWidth(parseFloat(event.target.value));
+    });
+  }
+
+  AXES.forEach((axis) => {
+    const slider = document.getElementById(apexBgSliderId(axis));
+    if (!slider) return;
+    slider.addEventListener('input', (event) => {
+      applyApexBgPosition(axis, parseFloat(event.target.value));
+    });
+  });
+
   syncLabelControlValues();
   applyStrategicLabelFontSize();
+  applyStrategicApexBgSettings();
 }

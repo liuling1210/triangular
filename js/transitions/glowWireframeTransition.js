@@ -1,7 +1,6 @@
 import {
   PYRAMID_EFFECT_MODES,
-  BASE_BLOOM_STRENGTH,
-  BASE_EMISSIVE
+  BASE_BLOOM_STRENGTH
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import {
@@ -11,6 +10,7 @@ import {
 } from '../ui/edgeFlowControls.js';
 import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
 import { getFootEmissiveIntensity } from '../ui/footControls.js';
+import { getShellEmissiveIntensity, getShellOpacity } from '../ui/shellControls.js';
 
 const DURATION = 1.35;
 const WIREFRAME_BLOOM_RATIO = 0.38;
@@ -76,7 +76,7 @@ function setGlowVisualWeight(w) {
   };
 
   applyPhysical(mats.solid, 1, getFootEmissiveIntensity());
-  applyPhysical(mats.shell, 0.42, BASE_EMISSIVE.shell);
+  applyPhysical(mats.shell, getShellOpacity(), getShellEmissiveIntensity());
   applyPhysical(mats.base, 1, getFootEmissiveIntensity());
   if (mats.axis) {
     mats.axis.transparent = fading;

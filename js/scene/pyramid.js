@@ -1,6 +1,7 @@
 import {
   DEFAULT_PYRAMID_COLOR,
   DEFAULT_AXIS_SETTINGS,
+  DEFAULT_SHELL_SETTINGS,
   BASE_EMISSIVE,
   RENDER_ORDER,
   DEFAULT_MOTION_PARTICLE_SETTINGS,
@@ -140,6 +141,9 @@ export function rebuildInternalParticles() {
 }
 
 export function createPyramid() {
+  const pyramidRoot = new THREE.Group();
+  state.pyramidRootGroup = pyramidRoot;
+
   const glowGroup = new THREE.Group();
   const wireframeGroup = new THREE.Group();
   const particleGroup = new THREE.Group();
@@ -157,10 +161,12 @@ export function createPyramid() {
     sliceInnerEdgeLines: [],
     meshes: []
   };
-  state.scene.add(glowGroup);
-  state.scene.add(wireframeGroup);
-  state.scene.add(particleGroup);
-  state.scene.add(flowGroup);
+
+  pyramidRoot.add(glowGroup);
+  pyramidRoot.add(wireframeGroup);
+  pyramidRoot.add(particleGroup);
+  pyramidRoot.add(flowGroup);
+  state.scene.add(pyramidRoot);
   wireframeGroup.visible = false;
   particleGroup.visible = false;
   flowGroup.visible = true;
@@ -228,20 +234,20 @@ export function createPyramid() {
   const shellBottomR = radiusAtHeight(SOLID_BOTTOM_HEIGHT);
   const shellConeGeo = new THREE.ConeGeometry(shellBottomR, shellHeight, 3, 1, true);
   const shellMat = new THREE.MeshPhysicalMaterial({
-    color: DEFAULT_PYRAMID_COLOR,
-    roughness: 0.3,
-    metalness: 0.1,
-    transmission: 0.5,
-    thickness: 1.5,
+    color: DEFAULT_SHELL_SETTINGS.color,
+    roughness: DEFAULT_SHELL_SETTINGS.roughness,
+    metalness: DEFAULT_SHELL_SETTINGS.metalness,
+    transmission: DEFAULT_SHELL_SETTINGS.transmission,
+    thickness: DEFAULT_SHELL_SETTINGS.thickness,
     transparent: true,
-    opacity: 0.42,
+    opacity: DEFAULT_SHELL_SETTINGS.opacity,
     emissive: 0x1a1005,
-    emissiveIntensity: BASE_EMISSIVE.shell,
+    emissiveIntensity: DEFAULT_SHELL_SETTINGS.emissiveIntensity,
     side: THREE.FrontSide,
     depthWrite: false,
     depthTest: true,
-    clearcoat: 0.7,
-    clearcoatRoughness: 0.12
+    clearcoat: DEFAULT_SHELL_SETTINGS.clearcoat,
+    clearcoatRoughness: DEFAULT_SHELL_SETTINGS.clearcoatRoughness
   });
   state.pyramidMats.shell = shellMat;
   const fullShell = new THREE.Mesh(shellConeGeo, shellMat);

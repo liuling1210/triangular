@@ -21,8 +21,8 @@
     <div id="strategic-labels-overlay" aria-hidden="true"></div>
   </div>
   <div id="control-panel">
-    <section class="panel-section is-open" data-section="color">
-      <button type="button" class="panel-section-header" aria-expanded="true">
+    <section class="panel-section" data-section="color">
+      <button type="button" class="panel-section-header" aria-expanded="false">
         <span class="panel-section-title">颜色与亮度</span>
         <span class="panel-section-chevron" aria-hidden="true"></span>
       </button>
@@ -43,6 +43,88 @@
             <span id="brightness-val">74%</span>
           </div>
           <input id="brightness-slider" class="panel-slider" type="range" min="10" max="150" value="74">
+        </div>
+      </div>
+    </section>
+
+    <section class="panel-section" data-section="shell">
+      <button type="button" class="panel-section-header" aria-expanded="false">
+        <span class="panel-section-title">玻璃外壳</span>
+        <span class="panel-section-chevron" aria-hidden="true"></span>
+      </button>
+      <div class="panel-section-body">
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>外壳颜色</span>
+            <span id="shell-color-hex-label">#FFFFFF</span>
+          </div>
+          <div class="color-row">
+            <input id="shell-color-picker" type="color" value="#FFFFFF">
+            <div id="shell-color-preview" style="background: #FFFFFF"></div>
+          </div>
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>颜色亮度</span>
+            <span id="shell-color-brightness-val">62%</span>
+          </div>
+          <input id="shell-color-brightness-slider" class="panel-slider" type="range" min="10" max="150" value="62">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>透明度</span>
+            <span id="shell-opacity-val">42%</span>
+          </div>
+          <input id="shell-opacity-slider" class="panel-slider" type="range" min="0" max="100" value="42">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>透光率</span>
+            <span id="shell-transmission-val">50%</span>
+          </div>
+          <input id="shell-transmission-slider" class="panel-slider" type="range" min="0" max="100" value="50">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>玻璃厚度</span>
+            <span id="shell-thickness-val">1.50</span>
+          </div>
+          <input id="shell-thickness-slider" class="panel-slider" type="range" min="10" max="500" value="150">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>粗糙度</span>
+            <span id="shell-roughness-val">30%</span>
+          </div>
+          <input id="shell-roughness-slider" class="panel-slider" type="range" min="0" max="100" value="30">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>金属度</span>
+            <span id="shell-metalness-val">10%</span>
+          </div>
+          <input id="shell-metalness-slider" class="panel-slider" type="range" min="0" max="100" value="10">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>自发光强度</span>
+            <span id="shell-emissive-val">20%</span>
+          </div>
+          <input id="shell-emissive-slider" class="panel-slider" type="range" min="0" max="300" value="20">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>清漆层</span>
+            <span id="shell-clearcoat-val">70%</span>
+          </div>
+          <input id="shell-clearcoat-slider" class="panel-slider" type="range" min="0" max="100" value="70">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>清漆粗糙度</span>
+            <span id="shell-clearcoat-roughness-val">12%</span>
+          </div>
+          <input id="shell-clearcoat-roughness-slider" class="panel-slider" type="range" min="0" max="100" value="12">
         </div>
       </div>
     </section>
@@ -101,8 +183,8 @@
       </div>
     </section>
 
-    <section class="panel-section is-open" data-section="edge-flow">
-      <button type="button" class="panel-section-header" aria-expanded="true">
+    <section class="panel-section" data-section="edge-flow">
+      <button type="button" class="panel-section-header" aria-expanded="false">
         <span class="panel-section-title">棱边流光</span>
         <span class="panel-section-chevron" aria-hidden="true"></span>
       </button>
@@ -152,8 +234,8 @@
       </div>
     </section>
 
-    <section class="panel-section is-open" data-section="motion-particle">
-      <button type="button" class="panel-section-header" aria-expanded="true">
+    <section class="panel-section" data-section="motion-particle">
+      <button type="button" class="panel-section-header" aria-expanded="false">
         <span class="panel-section-title">运动粒子</span>
         <span class="panel-section-chevron" aria-hidden="true"></span>
       </button>
@@ -189,8 +271,8 @@
       </div>
     </section>
 
-    <section class="panel-section is-open" data-section="grid">
-      <button type="button" class="panel-section-header" aria-expanded="true">
+    <section class="panel-section" data-section="grid">
+      <button type="button" class="panel-section-header" aria-expanded="false">
         <span class="panel-section-title">径向网格</span>
         <span class="panel-section-chevron" aria-hidden="true"></span>
       </button>
@@ -235,7 +317,7 @@
         <div class="ctrl-row strategic-label-global">
           <div class="ctrl-label">
             <span>文字大小</span>
-            <span id="strategic-label-font-size-val">15px</span>
+            <span id="strategic-label-font-size-val">26px</span>
           </div>
           <input
             id="strategic-label-font-size-slider"
@@ -243,7 +325,7 @@
             type="range"
             min="10"
             max="40"
-            value="15"
+            value="26"
           >
         </div>
         <div class="slice-section" data-label="base">
@@ -285,20 +367,20 @@
           <div class="ctrl-row">
             <div class="ctrl-label">
               <span>水平位置</span>
-              <span id="strategic-label-slices-x-val">63.3%</span>
+              <span id="strategic-label-slices-x-val">65.6%</span>
             </div>
-            <input id="strategic-label-slices-x-slider" class="panel-slider" type="range" min="0" max="1000" value="633">
+            <input id="strategic-label-slices-x-slider" class="panel-slider" type="range" min="0" max="1000" value="656">
           </div>
           <div class="ctrl-row">
             <div class="ctrl-label">
               <span>垂直位置</span>
-              <span id="strategic-label-slices-y-val">49.5%</span>
+              <span id="strategic-label-slices-y-val">46.8%</span>
             </div>
-            <input id="strategic-label-slices-y-slider" class="panel-slider" type="range" min="0" max="1000" value="495">
+            <input id="strategic-label-slices-y-slider" class="panel-slider" type="range" min="0" max="1000" value="468">
           </div>
         </div>
         <div class="slice-section" data-label="apex">
-          <div class="slice-title">战略顶点</div>
+          <div class="slice-title">战略目标</div>
           <div class="ctrl-row">
             <div class="ctrl-label">
               <span>水平位置</span>
@@ -309,9 +391,30 @@
           <div class="ctrl-row">
             <div class="ctrl-label">
               <span>垂直位置</span>
-              <span id="strategic-label-apex-y-val">12.8%</span>
+              <span id="strategic-label-apex-y-val">11.9%</span>
             </div>
-            <input id="strategic-label-apex-y-slider" class="panel-slider" type="range" min="0" max="1000" value="128">
+            <input id="strategic-label-apex-y-slider" class="panel-slider" type="range" min="0" max="1000" value="119">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>图片宽度</span>
+              <span id="strategic-apex-bg-width-val">72px</span>
+            </div>
+            <input id="strategic-apex-bg-width-slider" class="panel-slider" type="range" min="20" max="300" value="72">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>图片水平位置</span>
+              <span id="strategic-apex-bg-x-val">49.2%</span>
+            </div>
+            <input id="strategic-apex-bg-x-slider" class="panel-slider" type="range" min="0" max="1000" value="492">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>图片垂直位置</span>
+              <span id="strategic-apex-bg-y-val">15.6%</span>
+            </div>
+            <input id="strategic-apex-bg-y-slider" class="panel-slider" type="range" min="0" max="1000" value="156">
           </div>
         </div>
       </div>
@@ -444,6 +547,7 @@
     <div class="effect-btn-group view-btn-group">
       <button type="button" id="view-top-btn" class="effect-btn active">俯视</button>
       <button type="button" id="view-front-btn" class="effect-btn">正视</button>
+      <button type="button" id="pyramid-auto-rotate-btn" class="effect-btn">正视自转</button>
     </div>
     <h2>三棱锥效果</h2>
     <div class="effect-btn-group">
@@ -456,7 +560,7 @@
     </div>
     <h2>标注</h2>
     <div class="effect-btn-group">
-      <button type="button" id="corner-markers-toggle-btn" class="effect-btn active">角序号 123</button>
+      <button type="button" id="corner-markers-toggle-btn" class="effect-btn">角序号 123</button>
     </div>
   </div>
   <script type="module" src="js/app/main.js"></script>

@@ -1,6 +1,11 @@
 import { GRID, getGridRingRadii, syncGridDerivedSettings } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import {
+  clipSegmentExteriorXZ,
+  getGridClipTriangle,
+  rayTriangleExitDistanceXZ
+} from '../utils/gridClip.js';
+import {
   createGridRevealMaterial,
   getGridRevealStartAngle,
   setGridRevealFade,
@@ -13,6 +18,11 @@ export { getGridRevealStartAngle };
 
 const GRID_REVEAL_CROSSFADE = 0.45;
 const SEGMENT_AXIS = new THREE.Vector3(0, 0, 1);
+const EPS = 1e-5;
+
+function getGridParent() {
+  return state.pyramidRootGroup ?? state.scene;
+}
 
 function createGridMaterial() {
   return new THREE.MeshBasicMaterial({
@@ -64,7 +74,7 @@ function disposeGridGroup() {
   state.gridGroup.traverse((obj) => {
     if (obj.geometry) obj.geometry.dispose();
   });
-  state.scene.remove(state.gridGroup);
+  state.gridGroup.parent?.remove(state.gridGroup);
   state.gridGroup = null;
 }
 
@@ -75,23 +85,62 @@ function disposeGridReveal() {
     if (obj.geometry) obj.geometry.dispose();
     if (obj.material) obj.material.dispose();
   });
-  state.scene.remove(state.gridRevealGroup);
+  state.gridRevealGroup.parent?.remove(state.gridRevealGroup);
   state.gridRevealGroup = null;
   state.gridRevealMaterial = null;
 }
 
-function buildGridMeshes(group, settings) {
+function createClippedRingMeshes(radius, lineWidth, material, clipTriangle, segments = 96) {
+  const meshes = [];
+  const [v0, v1, v2] = clipTriangle;
+
+  for (let i = 0; i < segments; i++) {
+    const a0 = (i / segments) * Math.PI * 2;
+    const a1 = ((i + 1) / segments) * Math.PI * 2;
+    const start = new THREE.Vector3(radius * Math.cos(a0), 0, radius * Math.sin(a0));
+    const end = new THREE.Vector3(radius * Math.cos(a1), 0, radius * Math.sin(a1));
+    const parts = clipSegmentExteriorXZ(start, end, v0, v1, v2);
+
+    parts.forEach(([partStart, partEnd]) => {
+      const segment = createSegmentMesh(partStart, partEnd, lineWidth, material);
+      if (segment) meshes.push(segment);
+    });
+  }
+
+  return meshes;
+}
+
+function createClippedRadialMesh(maxRadius, angle, lineWidth, material, clipTriangle) {
+  const [v0, v1, v2] = clipTriangle;
+  const dir = new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
+  const exitT = rayTriangleExitDistanceXZ(dir, v0, v1, v2);
+  if (exitT >= maxRadius - EPS) return null;
+
+  const start = dir.clone().multiplyScalar(exitT);
+  const end = dir.clone().multiplyScalar(maxRadius);
+  return createSegmentMesh(start, end, lineWidth, material);
+}
+
+function buildGridMeshes(group, settings, clipTriangle = null) {
   const { maxRadius, radialCount, lineWidth } = settings;
   const material = state.gridMaterial;
   const ringRadii = getGridRingRadii(settings);
 
   ringRadii.forEach((radius) => {
-    group.add(createRingMesh(radius, lineWidth, material));
+    if (clipTriangle) {
+      createClippedRingMeshes(radius, lineWidth, material, clipTriangle).forEach((mesh) => {
+        group.add(mesh);
+      });
+    } else {
+      group.add(createRingMesh(radius, lineWidth, material));
+    }
   });
 
   for (let i = 0; i < radialCount; i++) {
     const angle = (i / radialCount) * Math.PI * 2;
-    const radial = createRadialMesh(maxRadius, angle, lineWidth, material);
+    const radial = clipTriangle
+      ? createClippedRadialMesh(maxRadius, angle, lineWidth, material, clipTriangle)
+      : createRadialMesh(maxRadius, angle, lineWidth, material);
     if (radial) group.add(radial);
   }
 }
@@ -126,7 +175,7 @@ export function createGridReveal(startAngle = 0) {
   const group = new THREE.Group();
   group.position.y = GRID.y;
   group.add(mesh);
-  state.scene.add(group);
+  getGridParent().add(group);
 
   state.gridRevealGroup = group;
   state.gridRevealMaterial = material;
@@ -193,11 +242,12 @@ export function rebuildCircularGrid() {
 
   applyGridAppearance();
 
+  const clipTriangle = getGridClipTriangle();
   const gridGroup = new THREE.Group();
   gridGroup.position.y = GRID.y;
   gridGroup.renderOrder = -1;
-  buildGridMeshes(gridGroup, state.gridSettings);
-  state.scene.add(gridGroup);
+  buildGridMeshes(gridGroup, state.gridSettings, clipTriangle);
+  getGridParent().add(gridGroup);
   state.gridGroup = gridGroup;
 }
 

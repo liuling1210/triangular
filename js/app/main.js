@@ -12,10 +12,12 @@ import { setupLights } from '../scene/lights.js';
 import { setupControls } from '../scene/controls.js';
 import { setupCameraInfoPopup } from '../ui/cameraInfoPopup.js';
 import { setupCameraViewUI, updateCameraViewTransition } from '../ui/cameraViewControls.js';
+import { setupPyramidAutoRotateUI, updatePyramidAutoRotate } from '../ui/pyramidAutoRotateControls.js';
 import { setupPostProcessing, updateFxaaResolution } from '../postprocessing/setup.js';
 import { applyPyramidColorAndBrightness, setupColorBrightnessUI } from '../ui/pyramidControls.js';
 import { applyAxisMaterial, setupAxisUI } from '../ui/axisControls.js';
 import { applyFootMaterial, setupFootUI } from '../ui/footControls.js';
+import { applyShellMaterial, setupShellUI } from '../ui/shellControls.js';
 import { setupSliceGradientUI } from '../ui/sliceControls.js';
 import { setupEdgeFlowUI } from '../ui/edgeFlowControls.js';
 import { setupMotionParticleUI } from '../ui/motionParticleControls.js';
@@ -53,10 +55,12 @@ function onWindowResize() {
 
 function animate() {
   requestAnimationFrame(animate);
+  const delta = state.clock?.getDelta() ?? 0.016;
   updateCameraViewTransition();
   if (!state.cameraViewTransition) {
     state.controls.update();
   }
+  updatePyramidAutoRotate(delta);
   const elapsed = advanceParticleFlowClock(1);
   updateParticleFlow(elapsed);
   if (state.clock) {
@@ -106,6 +110,7 @@ function init() {
   setupControls();
   setupCameraInfoPopup();
   setupCameraViewUI();
+  setupPyramidAutoRotateUI();
   setupPanelSections();
   setupColorBrightnessUI(applyAxisMaterial);
   setupEdgeFlowUI();
@@ -114,6 +119,7 @@ function init() {
   setupStrategicLabelUI();
   setupAxisUI();
   setupFootUI();
+  setupShellUI();
   setupSliceGradientUI();
   setupEffectUI();
   setupGlowWireTransitionUI();
@@ -122,6 +128,7 @@ function init() {
   applyPyramidColorAndBrightness();
   applyAxisMaterial();
   applyFootMaterial();
+  applyShellMaterial();
 
   setupColorEyedroppers();
 

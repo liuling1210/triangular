@@ -18,9 +18,20 @@ export const DEFAULT_BRIGHTNESS = 0.74;
 export const STRATEGIC_LABEL_ITEMS = [
   { key: 'base', text: '以价值三角为基', position: { x: 49.1, y: 76.6 } },
   { key: 'axis', text: '以战略中轴为路', position: { x: 36.2, y: 39.4 } },
-  { key: 'slices', text: '以战略课题为门', position: { x: 63.3, y: 49.5 } },
-  { key: 'apex', text: '战略顶点', position: { x: 49.1, y: 12.8 } }
+  { key: 'slices', text: '以战略课题为门', position: { x: 65.6, y: 46.8 } },
+  { key: 'apex', text: '战略目标', position: { x: 49.1, y: 11.9 } }
 ];
+
+export const STRATEGIC_APEX_BG_IMAGE = 'public/bg.png';
+
+export const DEFAULT_STRATEGIC_APEX_BG = {
+  width: 72,
+  position: { x: 49.2, y: 15.6 }
+};
+
+export const STRATEGIC_APEX_BG_RANGE = {
+  width: { min: 20, max: 300 }
+};
 
 export const DEFAULT_STRATEGIC_LABEL_POSITIONS = Object.fromEntries(
   STRATEGIC_LABEL_ITEMS.map(({ key, position }) => [key, { ...position }])
@@ -32,7 +43,7 @@ export const STRATEGIC_LABEL_SCREEN_RANGE = {
   y: { min: 0, max: 100 }
 };
 
-export const DEFAULT_STRATEGIC_LABEL_FONT_SIZE = 15;
+export const DEFAULT_STRATEGIC_LABEL_FONT_SIZE = 26;
 export const STRATEGIC_LABEL_FONT_SIZE_RANGE = { min: 10, max: 40 };
 
 export const DEFAULT_SLICE_GRADIENTS = [
@@ -50,6 +61,21 @@ export const DEFAULT_AXIS_SETTINGS = {
   clearcoat: 0.9,
   clearcoatRoughness: 0.06,
   lightIntensity: 2.8
+};
+
+/** 三棱锥上半段玻璃外壳（shell）材质参数 */
+export const DEFAULT_SHELL_SETTINGS = {
+  color: '#FFFFFF',
+  colorBrightness: 0.62,
+  emissiveStrength: 0.1,
+  emissiveIntensity: 0.2,
+  opacity: 0.42,
+  transmission: 0.5,
+  thickness: 1.5,
+  roughness: 0.3,
+  metalness: 0.1,
+  clearcoat: 0.7,
+  clearcoatRoughness: 0.12
 };
 
 /** 底部实心段（solid）与底面盖板（base）共用材质参数 */

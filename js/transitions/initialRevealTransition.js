@@ -1,12 +1,12 @@
 import {
   BASE_BLOOM_STRENGTH,
-  BASE_EMISSIVE,
   DEFAULT_PYRAMID_COLOR
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import { applyPyramidColorAndBrightness } from '../ui/pyramidControls.js';
 import { applyAxisMaterial } from '../ui/axisControls.js';
 import { getFootEmissiveIntensity } from '../ui/footControls.js';
+import { getShellEmissiveIntensity, getShellOpacity } from '../ui/shellControls.js';
 import {
   getEdgeFlowOpacity,
   getEdgeFlowOuterIntensity,
@@ -37,31 +37,58 @@ const LINE_SAMPLE_COUNT = 72;
 const REVEAL_LINE_OPACITY = 0.98;
 const SETTLE_DURATION = 0.5;
 
-/** 外壳与内部网格同步绘制，随后中轴 → 切片 → 粒子 */
-const SHELL_GRID_START = 2.4;
+const CONTOUR_SEGMENT_DURATION = 0.58;
+const CONTOUR_SEGMENT_OVERLAP = 0.1;
+
+function contourEndTime() {
+  const n = CONTOUR_VERTEX_PATH.length;
+  return (n - 1) * (CONTOUR_SEGMENT_DURATION - CONTOUR_SEGMENT_OVERLAP) + CONTOUR_SEGMENT_DURATION;
+}
+
+/** 轮廓闭合后立即底面渐变 → 完成后相机切正视 → 外壳/网格… */
+const BASE_SOLID_DURATION = 1.25;
+const CAMERA_FLY_DURATION = 1.2;
 const SHELL_GRID_DURATION = 1.4;
 const AXIS_DURATION = 1.0;
 const SLICES_DURATION = 1.8;
 const PARTICLES_DURATION = 1.5;
 
-const shellGridEnd = SHELL_GRID_START + SHELL_GRID_DURATION;
-const axisEnd = shellGridEnd + AXIS_DURATION;
-const slicesEnd = axisEnd + SLICES_DURATION;
-
-const TIMELINE = {
-  baseLines: { start: 0, duration: 2.0 },
-  baseSolid: { start: 1.6, duration: 1.35 },
-  shellEdges: { start: SHELL_GRID_START, duration: SHELL_GRID_DURATION },
-  gridInner: { start: SHELL_GRID_START, duration: SHELL_GRID_DURATION },
-  axis: { start: shellGridEnd, duration: AXIS_DURATION },
-  slices: { start: axisEnd, duration: SLICES_DURATION },
-  particles: { start: slicesEnd, duration: PARTICLES_DURATION }
+const REVEAL_DURATIONS = {
+  baseSolid: BASE_SOLID_DURATION,
+  cameraFly: CAMERA_FLY_DURATION,
+  shellEdges: SHELL_GRID_DURATION,
+  gridInner: SHELL_GRID_DURATION,
+  axis: AXIS_DURATION,
+  slices: SLICES_DURATION,
+  particles: PARTICLES_DURATION
 };
 
-export { TIMELINE as REVEAL_TIMELINE };
+function buildEffectiveTimeline(reveal) {
+  const baseStart = reveal?.baseSolidStartTime;
+  if (baseStart == null) {
+    return null;
+  }
 
-const CONTOUR_SEGMENT_DURATION = 0.58;
-const CONTOUR_SEGMENT_OVERLAP = 0.1;
+  const cameraStart = baseStart + BASE_SOLID_DURATION;
+  const shellStart = cameraStart + CAMERA_FLY_DURATION;
+  const shellEnd = shellStart + SHELL_GRID_DURATION;
+  const axisStart = shellEnd;
+  const axisEnd = axisStart + AXIS_DURATION;
+  const slicesStart = axisEnd;
+  const slicesEnd = slicesStart + SLICES_DURATION;
+
+  return {
+    baseSolid: { start: baseStart, duration: BASE_SOLID_DURATION },
+    cameraFly: { start: cameraStart, duration: CAMERA_FLY_DURATION },
+    shellEdges: { start: shellStart, duration: SHELL_GRID_DURATION },
+    gridInner: { start: shellStart, duration: SHELL_GRID_DURATION },
+    axis: { start: axisStart, duration: AXIS_DURATION },
+    slices: { start: slicesStart, duration: SLICES_DURATION },
+    particles: { start: slicesEnd, duration: PARTICLES_DURATION }
+  };
+}
+
+export { REVEAL_DURATIONS as REVEAL_TIMELINE };
 const SLICE_LAYER_OFFSET = 0.2;
 const SLICE_LAYER_DURATION = 0.85;
 
@@ -83,7 +110,16 @@ function phaseT(elapsed, phase) {
 }
 
 function getTotalDuration() {
-  return TIMELINE.particles.start + TIMELINE.particles.duration + SETTLE_DURATION;
+  return (
+    contourEndTime() +
+    BASE_SOLID_DURATION +
+    CAMERA_FLY_DURATION +
+    SHELL_GRID_DURATION +
+    AXIS_DURATION +
+    SLICES_DURATION +
+    PARTICLES_DURATION +
+    SETTLE_DURATION
+  );
 }
 
 export function getContourDrawProgress(elapsed, baseVerts = null) {
@@ -106,8 +142,7 @@ export function getContourDrawProgress(elapsed, baseVerts = null) {
 }
 
 export function getContourEndTime() {
-  const n = CONTOUR_VERTEX_PATH.length;
-  return (n - 1) * (CONTOUR_SEGMENT_DURATION - CONTOUR_SEGMENT_OVERLAP) + CONTOUR_SEGMENT_DURATION;
+  return contourEndTime();
 }
 
 function createProgressiveLine(start, end, material) {
@@ -285,16 +320,23 @@ function updateBaseLines(elapsed, reveal) {
   reveal.contourProgress = contourProgress;
   updateGridRevealFromContour(contourProgress);
 
-  const lineFade = softReveal(clamp01((elapsed - TIMELINE.baseSolid.start) / TIMELINE.baseSolid.duration));
+  if (contourProgress >= 0.999 && reveal.baseSolidStartTime == null) {
+    reveal.baseSolidStartTime = elapsed;
+  }
+
+  const baseStart = reveal.baseSolidStartTime;
+  const lineFade = baseStart == null
+    ? 0
+    : softReveal(clamp01((elapsed - baseStart) / BASE_SOLID_DURATION));
   const lineIn = smootherstep(clamp01(elapsed / 0.18));
   reveal.lineMaterial.opacity = REVEAL_LINE_OPACITY * lineIn * (1 - lineFade * 0.82);
 }
 
 function updateBaseSolid(elapsed, reveal) {
-  const contourDone = (reveal?.contourProgress ?? 0) >= 0.999;
-  if (!contourDone) return;
+  const baseStart = reveal.baseSolidStartTime;
+  if (baseStart == null) return;
 
-  const t = clamp01((elapsed - TIMELINE.baseSolid.start) / TIMELINE.baseSolid.duration);
+  const t = clamp01((elapsed - baseStart) / BASE_SOLID_DURATION);
   const baseW = softReveal(t);
   const solidW = softReveal(clamp01((t - 0.2) / 0.8));
 
@@ -311,8 +353,8 @@ function updateBaseSolid(elapsed, reveal) {
   applyPhysicalRevealSoft(mats.solid, 1, getFootEmissiveIntensity(), solidW);
 }
 
-function updateShellEdges(elapsed) {
-  const w = phaseT(elapsed, TIMELINE.shellEdges);
+function updateShellEdges(elapsed, timeline) {
+  const w = phaseT(elapsed, timeline.shellEdges);
   const edgeW = smootherstep(clamp01(w * 1.12 + 0.04));
   const shellW = smootherstep(clamp01(w * 0.95));
 
@@ -321,7 +363,7 @@ function updateShellEdges(elapsed) {
   const shellMesh = objects.meshes[3];
 
   if (shellMesh) shellMesh.visible = shellW > 0.01;
-  applyPhysicalReveal(mats.shell, 0.42, BASE_EMISSIVE.shell, shellW);
+  applyPhysicalReveal(mats.shell, getShellOpacity(), getShellEmissiveIntensity(), shellW);
 
   if (objects.edgeGlowTubes) {
     objects.edgeGlowTubes.tubeGroup.visible = edgeW > 0.03;
@@ -338,8 +380,8 @@ function updateShellEdges(elapsed) {
   });
 }
 
-function updateAxis(elapsed) {
-  const w = phaseT(elapsed, TIMELINE.axis);
+function updateAxis(elapsed, timeline) {
+  const w = phaseT(elapsed, timeline.axis);
   const objects = state.glowObjects;
   const mats = state.pyramidMats;
   const axisShaft = objects.axisShaft;
@@ -360,8 +402,8 @@ function updateAxis(elapsed) {
   mats.axis.emissiveIntensity = state.axisSettings.emissiveIntensity * w * emissiveBump;
 }
 
-function updateSliceLayer(elapsed, sliceIndex) {
-  const sliceStart = TIMELINE.slices.start + sliceIndex * SLICE_LAYER_OFFSET;
+function updateSliceLayer(elapsed, sliceIndex, timeline) {
+  const sliceStart = timeline.slices.start + sliceIndex * SLICE_LAYER_OFFSET;
   const w = smootherstep(clamp01((elapsed - sliceStart) / SLICE_LAYER_DURATION));
   const edgeW = smootherstep(clamp01((elapsed - (sliceStart + 0.1)) / (SLICE_LAYER_DURATION * 0.85)));
 
@@ -389,9 +431,9 @@ function updateSliceLayer(elapsed, sliceIndex) {
   if (innerLine) innerLine.visible = edgeW > 0.04;
 }
 
-function updateGridInner(elapsed, reveal) {
+function updateGridInner(elapsed, reveal, timeline) {
   const innerT = smootherstep(
-    clamp01((elapsed - TIMELINE.gridInner.start) / TIMELINE.gridInner.duration)
+    clamp01((elapsed - timeline.gridInner.start) / timeline.gridInner.duration)
   );
   let gridCrossfadeElapsed = null;
   if (innerT >= 0.999) {
@@ -403,13 +445,13 @@ function updateGridInner(elapsed, reveal) {
   updateGridRevealInner(innerT, gridCrossfadeElapsed);
 }
 
-function updateSlices(elapsed) {
-  updateSliceLayer(elapsed, 0);
-  updateSliceLayer(elapsed, 1);
+function updateSlices(elapsed, timeline) {
+  updateSliceLayer(elapsed, 0, timeline);
+  updateSliceLayer(elapsed, 1, timeline);
 }
 
-function updateParticles(elapsed) {
-  const w = phaseT(elapsed, TIMELINE.particles);
+function updateParticles(elapsed, timeline) {
+  const w = phaseT(elapsed, timeline.particles);
   const { flow } = state.pyramidGroups;
   const mats = state.pyramidMats;
 
@@ -420,10 +462,10 @@ function updateParticles(elapsed) {
   }
 }
 
-function updateBloom(elapsed) {
+function updateBloom(elapsed, timeline) {
   if (!state.bloomPass) return;
   const full = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
-  const bloomT = smootherstep(clamp01(elapsed / TIMELINE.particles.start));
+  const bloomT = smootherstep(clamp01(elapsed / timeline.particles.start));
   state.bloomPass.strength = lerp(full * 0.65, full, bloomT);
 }
 
@@ -496,11 +538,10 @@ export function startInitialReveal() {
   }
 }
 
-function updateInitialRevealCamera(elapsed, reveal) {
-  if (elapsed >= TIMELINE.baseSolid.start && !reveal.cameraFlyStarted) {
-    reveal.cameraFlyStarted = true;
-    flyCameraToFrontView();
-  }
+function updateInitialRevealCamera(elapsed, reveal, timeline) {
+  if (!timeline || elapsed < timeline.cameraFly.start || reveal.cameraFlyStarted) return;
+  reveal.cameraFlyStarted = true;
+  flyCameraToFrontView();
 }
 
 export function updateInitialReveal() {
@@ -512,30 +553,32 @@ export function updateInitialReveal() {
 
   const elapsed = state.clock.getElapsedTime() - transition.startTime;
 
-  updateInitialRevealCamera(elapsed, reveal);
   updateBaseLines(elapsed, reveal);
+  updateBaseSolid(elapsed, reveal);
 
-  if (elapsed >= TIMELINE.baseSolid.start) {
-    updateBaseSolid(elapsed, reveal);
+  const timeline = buildEffectiveTimeline(reveal);
+  if (timeline) {
+    updateInitialRevealCamera(elapsed, reveal, timeline);
+    if (elapsed >= timeline.shellEdges.start) {
+      updateShellEdges(elapsed, timeline);
+    }
+    if (elapsed >= timeline.gridInner.start) {
+      updateGridInner(elapsed, reveal, timeline);
+    }
+    if (elapsed >= timeline.axis.start) {
+      updateAxis(elapsed, timeline);
+    }
+    if (elapsed >= timeline.slices.start) {
+      updateSlices(elapsed, timeline);
+    }
+    if (elapsed >= timeline.particles.start) {
+      updateParticles(elapsed, timeline);
+    }
+    updateBloom(elapsed, timeline);
+    updateStrategicLabelReveal(elapsed, timeline, reveal);
+  } else {
+    updateBloom(elapsed, { particles: { start: getTotalDuration() } });
   }
-  if (elapsed >= TIMELINE.shellEdges.start) {
-    updateShellEdges(elapsed);
-  }
-  if (elapsed >= TIMELINE.gridInner.start) {
-    updateGridInner(elapsed, reveal);
-  }
-  if (elapsed >= TIMELINE.axis.start) {
-    updateAxis(elapsed);
-  }
-  if (elapsed >= TIMELINE.slices.start) {
-    updateSlices(elapsed);
-  }
-  if (elapsed >= TIMELINE.particles.start) {
-    updateParticles(elapsed);
-  }
-
-  updateBloom(elapsed);
-  updateStrategicLabelReveal(elapsed, TIMELINE, reveal);
 
   if (elapsed >= transition.duration) {
     finishInitialReveal(reveal);
