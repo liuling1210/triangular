@@ -18,7 +18,6 @@ import {
 } from './glowWireframeTransition.js';
 import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
 import { getFootEmissiveIntensity } from '../ui/footControls.js';
-import { getMotionParticleVertexOpacity } from '../utils/motionParticleSettings.js';
 
 // 显影 → 凝聚 → 定型
 const DURATION = 2.1;
@@ -181,7 +180,6 @@ function setGlowMaterializeWeight(progress) {
     mat.uniforms.uOpacity.value = getEdgeFlowOpacity(decorOpacity);
     mat.uniforms.uIntensity.value = getEdgeFlowInnerIntensity(decorOpacity);
   });
-  if (mats.vertex) mats.vertex.opacity = getMotionParticleVertexOpacity() * decorOpacity;
 
   syncGlowMaterializeVisibility(coreT, shellT, sliceT, decorT);
 }
@@ -207,7 +205,6 @@ function syncGlowMaterializeVisibility(coreT, shellT, sliceT, decorT) {
 
   const showDecor = decorT > GLOW_DECOR_SHOW;
   if (objects.edgeGlowTubes) objects.edgeGlowTubes.tubeGroup.visible = showDecor;
-  if (objects.vertexPoints) objects.vertexPoints.visible = showDecor;
 }
 
 function applyBloomForTransition(progress) {

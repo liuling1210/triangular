@@ -31,6 +31,7 @@ import { createWireframePyramid } from './wireframePyramid.js';
 import { createParticlePyramid } from './particlePyramid.js';
 import { createEdgeGlowTubes } from './edgeGlowTubes.js';
 import { createBaseCornerMarkers } from './baseCornerMarkers.js';
+import { createStrategicLabels } from './strategicLabels.js';
 import { getMotionParticleRiseSpeed, getMotionParticleCountMultiplier } from '../utils/motionParticleSettings.js';
 
 function encodeParticleStream(x, y, z, phase) {
@@ -146,7 +147,6 @@ export function createPyramid() {
   state.pyramidGroups = { glow: glowGroup, wireframe: wireframeGroup, particles: particleGroup, flow: flowGroup };
   state.glowObjects = {
     edgeGlowTubes: null,
-    vertexPoints: null,
     internalPoints: null,
     axisShaft: null,
     solidFrustum: null,
@@ -170,6 +170,7 @@ export function createPyramid() {
   state.pyramidApex = apex;
   state.pyramidBaseVerts = baseVerts.map((v) => v.clone());
   createBaseCornerMarkers(baseVerts);
+  createStrategicLabels();
   const sliceHeights = [H / 3, (2 * H) / 3];
   state.pyramidSliceHeights = sliceHeights;
 
@@ -345,36 +346,6 @@ export function createPyramid() {
   state.pyramidMats.edgeFlowOuter = edgeGlow.outerMats;
   state.pyramidMats.edgeFlowInner = edgeGlow.innerMats;
 
-  const vertexPositions = [];
-  baseVerts.forEach((v) => vertexPositions.push(v.x, v.y + 0.02, v.z));
-  const vertexGeo = new THREE.BufferGeometry();
-  vertexGeo.setAttribute('position', new THREE.Float32BufferAttribute(vertexPositions, 3));
-  vertexGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(3 * baseVerts.length), 3));
-  state.vertexParticleStreams = baseVerts.map((v) => ({
-    startX: v.x,
-    startY: v.y + 0.02,
-    startZ: v.z,
-    phase: Math.random()
-  }));
-  state.vertexParticleGeo = vertexGeo;
-
-  const vertexMat = new THREE.PointsMaterial({
-    color: DEFAULT_PYRAMID_COLOR,
-    size: DEFAULT_MOTION_PARTICLE_SETTINGS.vertexSize,
-    map: createGlowTexture(DEFAULT_PYRAMID_COLOR, true),
-    transparent: true,
-    opacity: DEFAULT_MOTION_PARTICLE_SETTINGS.vertexOpacity,
-    vertexColors: true,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    depthTest: false
-  });
-  state.pyramidMats.vertex = vertexMat;
-  const vertexPoints = new THREE.Points(vertexGeo, vertexMat);
-  vertexPoints.renderOrder = RENDER_ORDER.particles;
-  glowGroup.add(vertexPoints);
-  state.glowObjects.vertexPoints = vertexPoints;
-
   state.glowObjects.internalPoints = createInternalParticles(
     flowGroup,
     apex,
@@ -419,8 +390,7 @@ export function stampParticleFlowClock() {
   state.particleFlowLastUpdate = state.clock.getElapsedTime();
 }
 
-export function updateParticleFlow(elapsed, options = {}) {
-  const vertexPulseWeight = clamp01(options.vertexPulseWeight ?? 1);
+export function updateParticleFlow(elapsed) {
   const riseSpeed = getMotionParticleRiseSpeed();
 
   if (state.internalParticleGeo && state.internalParticleStreams.length) {
@@ -444,32 +414,4 @@ export function updateParticleFlow(elapsed, options = {}) {
     state.internalParticleGeo.attributes.position.needsUpdate = true;
     state.internalParticleGeo.attributes.color.needsUpdate = true;
   }
-
-  if (state.vertexParticleGeo && state.vertexParticleStreams.length && state.pyramidApex) {
-    const pos = state.vertexParticleGeo.attributes.position.array;
-    const colors = state.vertexParticleGeo.attributes.color.array;
-    for (let i = 0; i < state.vertexParticleStreams.length; i++) {
-      const s = state.vertexParticleStreams[i];
-      const t = (s.phase + (elapsed * riseSpeed) / H) % 1;
-      const i3 = i * 3;
-      pos[i3] = s.startX + (state.pyramidApex.x - s.startX) * t;
-      pos[i3 + 1] = s.startY + (state.pyramidApex.y - s.startY) * t;
-      pos[i3 + 2] = s.startZ + (state.pyramidApex.z - s.startZ) * t;
-      const sinFade = 0.45 + 0.55 * Math.sin(Math.PI * t);
-      const fade = neutralFade(sinFade, 0.65, vertexPulseWeight);
-      colors[i3] = fade;
-      colors[i3 + 1] = fade;
-      colors[i3 + 2] = fade;
-    }
-    state.vertexParticleGeo.attributes.position.needsUpdate = true;
-    state.vertexParticleGeo.attributes.color.needsUpdate = true;
-  }
-}
-
-function clamp01(v) {
-  return Math.max(0, Math.min(1, v));
-}
-
-function neutralFade(sinFade, neutral, pulseWeight) {
-  return neutral + (sinFade - neutral) * pulseWeight;
 }

@@ -13,8 +13,7 @@ import {
   getEdgeFlowInnerIntensity
 } from '../ui/edgeFlowControls.js';
 import {
-  getMotionParticleOpacity,
-  getMotionParticleVertexOpacity
+  getMotionParticleOpacity
 } from '../utils/motionParticleSettings.js';
 import { restoreGlowObjectVisibility } from './glowWireframeTransition.js';
 import { flyCameraToFrontView } from '../ui/cameraViewControls.js';
@@ -25,6 +24,11 @@ import {
   updateGridRevealFromContour,
   updateGridRevealInner
 } from '../scene/grid.js';
+import {
+  hideAllStrategicLabels,
+  showAllStrategicLabels,
+  updateStrategicLabelReveal
+} from '../scene/strategicLabels.js';
 
 /** 底面外轮廓：1号 → 3号 → 2号 → 回到 1号 */
 const CONTOUR_VERTEX_PATH = [[0, 2], [2, 1], [1, 0]];
@@ -53,6 +57,8 @@ const TIMELINE = {
   slices: { start: axisEnd, duration: SLICES_DURATION },
   particles: { start: slicesEnd, duration: PARTICLES_DURATION }
 };
+
+export { TIMELINE as REVEAL_TIMELINE };
 
 const CONTOUR_SEGMENT_DURATION = 0.58;
 const CONTOUR_SEGMENT_OVERLAP = 0.1;
@@ -167,7 +173,6 @@ function hidePyramidContent() {
     line.visible = false;
   });
   if (objects.edgeGlowTubes) objects.edgeGlowTubes.tubeGroup.visible = false;
-  if (objects.vertexPoints) objects.vertexPoints.visible = false;
   if (objects.axisShaft) {
     objects.axisShaft.visible = false;
     objects.axisShaft.scale.y = 0.001;
@@ -214,11 +219,11 @@ function hidePyramidContent() {
     mat.uniforms.uOpacity.value = 0;
     mat.uniforms.uIntensity.value = 0;
   });
-  if (mats.vertex) mats.vertex.opacity = 0;
 
   state.baseCornerMarkers.forEach((marker) => {
     marker.element.style.opacity = '0';
   });
+  hideAllStrategicLabels();
 }
 
 function softReveal(t) {
@@ -405,20 +410,14 @@ function updateSlices(elapsed) {
 
 function updateParticles(elapsed) {
   const w = phaseT(elapsed, TIMELINE.particles);
-  const vertexW = smootherstep(clamp01((elapsed - (TIMELINE.particles.start + 0.22)) / 1.28));
   const { flow } = state.pyramidGroups;
   const mats = state.pyramidMats;
-  const objects = state.glowObjects;
 
   if (flow) flow.visible = w > 0.02;
   if (mats.particles) {
     const heightReveal = smootherstep(clamp01(w * 1.1));
     mats.particles.opacity = getMotionParticleOpacity() * heightReveal;
   }
-  if (objects.vertexPoints) {
-    objects.vertexPoints.visible = vertexW > 0.04;
-  }
-  if (mats.vertex) mats.vertex.opacity = getMotionParticleVertexOpacity() * vertexW;
 }
 
 function updateBloom(elapsed) {
@@ -462,6 +461,7 @@ function finishInitialReveal(reveal) {
   state.baseCornerMarkers.forEach((marker) => {
     marker.element.style.opacity = state.showCornerMarkers ? '1' : '0';
   });
+  showAllStrategicLabels();
 
   if (state.bloomPass) {
     state.bloomPass.strength = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
@@ -535,6 +535,7 @@ export function updateInitialReveal() {
   }
 
   updateBloom(elapsed);
+  updateStrategicLabelReveal(elapsed, TIMELINE, reveal);
 
   if (elapsed >= transition.duration) {
     finishInitialReveal(reveal);

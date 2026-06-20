@@ -6,8 +6,7 @@ import { state } from '../state/appState.js';
 import { createGlowTexture } from './color.js';
 import { applyEdgeFlowShaderColors } from '../materials/edgeFlowMaterial.js';
 import {
-  getMotionParticleOpacity,
-  getMotionParticleVertexOpacity
+  getMotionParticleOpacity
 } from './motionParticleSettings.js';
 
 function clamp01(v) {
@@ -50,11 +49,6 @@ export function applyMotionParticleColors(goldWeight = state.motionParticleGoldW
     pyramidMats.particles.color.copy(mixColor);
     pyramidMats.particles.opacity = getMotionParticleOpacity();
     refreshPointsGlowMap(pyramidMats.particles, mixHex, false);
-  }
-  if (pyramidMats.vertex) {
-    pyramidMats.vertex.color.copy(mixColor);
-    pyramidMats.vertex.opacity = getMotionParticleVertexOpacity();
-    refreshPointsGlowMap(pyramidMats.vertex, mixHex, true);
   }
   if (pyramidMats.particleCloud) {
     pyramidMats.particleCloud.color.copy(mixColor);

@@ -2,6 +2,11 @@ import { SHOW_LABELS } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import { createPyramid, advanceParticleFlowClock, updateParticleFlow, updateEdgeFlow } from '../scene/pyramid.js';
 import { createCircularGrid } from '../scene/grid.js';
+import {
+  createGlitchBackground,
+  resizeGlitchBackground,
+  updateGlitchBackground
+} from '../scene/glitchBackground.js';
 import { createLabels } from '../scene/labels.js';
 import { setupLights } from '../scene/lights.js';
 import { setupControls } from '../scene/controls.js';
@@ -15,7 +20,9 @@ import { setupSliceGradientUI } from '../ui/sliceControls.js';
 import { setupEdgeFlowUI } from '../ui/edgeFlowControls.js';
 import { setupMotionParticleUI } from '../ui/motionParticleControls.js';
 import { setupGridUI } from '../ui/gridControls.js';
+import { setupStrategicLabelUI } from '../ui/strategicLabelControls.js';
 import { setupPanelSections } from '../ui/panelSections.js';
+import { setupColorEyedroppers } from '../ui/colorEyedropper.js';
 import { setupEffectUI } from '../ui/effectControls.js';
 import {
   setupGlowWireTransitionUI,
@@ -41,6 +48,7 @@ function onWindowResize() {
   state.composer.setSize(window.innerWidth, window.innerHeight);
   updateFxaaResolution();
   state.labelRenderer.setSize(window.innerWidth, window.innerHeight);
+  resizeGlitchBackground();
 }
 
 function animate() {
@@ -58,6 +66,7 @@ function animate() {
   updateWireParticleTransition();
   updateParticleGlowTransition();
   updateInitialReveal();
+  updateGlitchBackground();
   state.composer.render();
   if (SHOW_LABELS || state.baseCornerMarkers.length) {
     state.labelRenderer.render(state.scene, state.camera);
@@ -90,6 +99,7 @@ function init() {
 
   createPyramid();
   createCircularGrid();
+  createGlitchBackground(container);
   if (SHOW_LABELS) createLabels();
   setupLights();
   setupPostProcessing();
@@ -101,6 +111,7 @@ function init() {
   setupEdgeFlowUI();
   setupMotionParticleUI();
   setupGridUI();
+  setupStrategicLabelUI();
   setupAxisUI();
   setupFootUI();
   setupSliceGradientUI();
@@ -111,6 +122,8 @@ function init() {
   applyPyramidColorAndBrightness();
   applyAxisMaterial();
   applyFootMaterial();
+
+  setupColorEyedroppers();
 
   state.clock = new THREE.Clock();
   startInitialReveal();

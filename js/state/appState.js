@@ -8,6 +8,8 @@ import {
   DEFAULT_EDGE_FLOW_SETTINGS,
   DEFAULT_GRID_SETTINGS,
   DEFAULT_MOTION_PARTICLE_SETTINGS,
+  DEFAULT_STRATEGIC_LABEL_POSITIONS,
+  DEFAULT_STRATEGIC_LABEL_FONT_SIZE,
   PYRAMID_EFFECT_MODES
 } from '../config/constants.js';
 
@@ -21,6 +23,10 @@ export const state = {
   edgeFlowSettings: { ...DEFAULT_EDGE_FLOW_SETTINGS },
   motionParticleSettings: { ...DEFAULT_MOTION_PARTICLE_SETTINGS },
   gridSettings: { ...DEFAULT_GRID_SETTINGS },
+  strategicLabelPositions: Object.fromEntries(
+    Object.entries(DEFAULT_STRATEGIC_LABEL_POSITIONS).map(([key, position]) => [key, { ...position }])
+  ),
+  strategicLabelFontSize: DEFAULT_STRATEGIC_LABEL_FONT_SIZE,
   gridGroup: null,
   gridMaterial: null,
   gridRevealGroup: null,
@@ -34,6 +40,7 @@ export const state = {
   bloomPass: null,
   fxaaPass: null,
   labelElements: [],
+  strategicLabels: [],
   baseCornerMarkers: [],
   showCornerMarkers: true,
   clock: null,
@@ -42,8 +49,6 @@ export const state = {
   pyramidSliceHeights: null,
   internalParticleGeo: null,
   internalParticleStreams: [],
-  vertexParticleGeo: null,
-  vertexParticleStreams: [],
   particleCloudGeo: null,
   particleFlowElapsed: null,
   particleFlowLastUpdate: null,

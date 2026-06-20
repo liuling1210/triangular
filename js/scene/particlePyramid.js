@@ -79,10 +79,11 @@ export function createParticlePyramid(parent, apex, baseVerts, sliceHeights) {
     positions.push(x, y, z);
   }
 
-  sliceHeights.forEach((y) => {
+  sliceHeights.forEach((y, sliceIndex) => {
+    const sliceScale = sliceIndex === 1 ? 0.25 : 1;
     const sv = getSliceVertices(baseVerts, y);
-    sampleToPositions(sv[0], sv[1], sv[2], 1500, positions);
-    for (let i = 0; i < 500; i++) {
+    sampleToPositions(sv[0], sv[1], sv[2], Math.round(1500 * sliceScale), positions);
+    for (let i = 0; i < Math.round(500 * sliceScale); i++) {
       const bandY = y + (Math.random() - 0.5) * 0.1;
       if (bandY < 0 || bandY > H) continue;
       const bandSv = getSliceVertices(baseVerts, bandY);

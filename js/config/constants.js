@@ -6,7 +6,7 @@ export const INITIAL_CAMERA = {
 
 /** 正视视角 */
 export const FRONT_VIEW_CAMERA = {
-  position: { x: 6.074, y: 2.37, z: 3.565 },
+  position: { x: 7.076, y: 2.621, z: 4.171 },
   target: { x: 0.052, y: 0.86, z: -0.078 },
   azimuth: 1.027
 };
@@ -14,6 +14,26 @@ export const FRONT_VIEW_CAMERA = {
 export const DEFAULT_PYRAMID_COLOR = '#E8CB96';
 export const SHOW_LABELS = false;
 export const DEFAULT_BRIGHTNESS = 0.74;
+
+export const STRATEGIC_LABEL_ITEMS = [
+  { key: 'base', text: '以价值三角为基', position: { x: 49.1, y: 76.6 } },
+  { key: 'axis', text: '以战略中轴为路', position: { x: 36.2, y: 39.4 } },
+  { key: 'slices', text: '以战略课题为门', position: { x: 63.3, y: 49.5 } },
+  { key: 'apex', text: '战略顶点', position: { x: 49.1, y: 12.8 } }
+];
+
+export const DEFAULT_STRATEGIC_LABEL_POSITIONS = Object.fromEntries(
+  STRATEGIC_LABEL_ITEMS.map(({ key, position }) => [key, { ...position }])
+);
+
+/** 屏幕百分比定位（相对画布宽高） */
+export const STRATEGIC_LABEL_SCREEN_RANGE = {
+  x: { min: 0, max: 100 },
+  y: { min: 0, max: 100 }
+};
+
+export const DEFAULT_STRATEGIC_LABEL_FONT_SIZE = 15;
+export const STRATEGIC_LABEL_FONT_SIZE_RANGE = { min: 10, max: 40 };
 
 export const DEFAULT_SLICE_GRADIENTS = [
   { start: '#383838', end: '#B6AE58' },
@@ -101,8 +121,6 @@ export const DEFAULT_MOTION_PARTICLE_SETTINGS = {
   speed: PARTICLE_RISE_SPEED,
   opacity: INTERNAL_FLOW_OPACITY,
   internalSize: 0.065,
-  vertexSize: 0.28,
-  vertexOpacity: 1,
   count: 0.37
 };
 
@@ -171,4 +189,23 @@ export const DEFAULT_GRID_SETTINGS = {
   radialCount: GRID.radialCount,
   lineWidth: GRID.lineWidth,
   brightness: GRID.brightness
+};
+
+/** 背景 J/Z/X/+ 电视式闪烁 */
+export const GLITCH_BG = {
+  chars: ['J', 'Z', 'X', '+'],
+  slotCount: 24,
+  color: '#E8CB96',
+  fontSizeMin: 12,
+  fontSizeMax: 22,
+  opacityMin: 0.18,
+  opacityMax: 0.42,
+  idleMinMs: 1200,
+  idleMaxMs: 4000,
+  tickMinMs: 100,
+  tickMaxMs: 180,
+  flashFlickersMin: 3,
+  flashFlickersMax: 5,
+  holdMs: 1000,
+  edgeInsetPx: 16
 };

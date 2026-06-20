@@ -17,7 +17,9 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS2DRenderer.js"></script>
 </head>
 <body>
-  <div id="canvas-container"></div>
+  <div id="canvas-container">
+    <div id="strategic-labels-overlay" aria-hidden="true"></div>
+  </div>
   <div id="control-panel">
     <section class="panel-section is-open" data-section="color">
       <button type="button" class="panel-section-header" aria-expanded="true">
@@ -184,20 +186,6 @@
           </div>
           <input id="motion-particle-size-slider" class="panel-slider" type="range" min="20" max="120" value="65">
         </div>
-        <div class="ctrl-row">
-          <div class="ctrl-label">
-            <span>顶点大小</span>
-            <span id="motion-particle-vertex-size-val">0.280</span>
-          </div>
-          <input id="motion-particle-vertex-size-slider" class="panel-slider" type="range" min="80" max="500" value="280">
-        </div>
-        <div class="ctrl-row">
-          <div class="ctrl-label">
-            <span>顶点透明度</span>
-            <span id="motion-particle-vertex-opacity-val">100%</span>
-          </div>
-          <input id="motion-particle-vertex-opacity-slider" class="panel-slider" type="range" min="0" max="100" value="100">
-        </div>
       </div>
     </section>
 
@@ -234,6 +222,97 @@
             <span id="grid-brightness-val">29%</span>
           </div>
           <input id="grid-brightness-slider" class="panel-slider" type="range" min="0" max="100" value="29">
+        </div>
+      </div>
+    </section>
+
+    <section class="panel-section" data-section="strategic-labels">
+      <button type="button" class="panel-section-header" aria-expanded="false">
+        <span class="panel-section-title">战略文字</span>
+        <span class="panel-section-chevron" aria-hidden="true"></span>
+      </button>
+      <div class="panel-section-body">
+        <div class="ctrl-row strategic-label-global">
+          <div class="ctrl-label">
+            <span>文字大小</span>
+            <span id="strategic-label-font-size-val">15px</span>
+          </div>
+          <input
+            id="strategic-label-font-size-slider"
+            class="panel-slider"
+            type="range"
+            min="10"
+            max="40"
+            value="15"
+          >
+        </div>
+        <div class="slice-section" data-label="base">
+          <div class="slice-title">以价值三角为基</div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>水平位置</span>
+              <span id="strategic-label-base-x-val">49.1%</span>
+            </div>
+            <input id="strategic-label-base-x-slider" class="panel-slider" type="range" min="0" max="1000" value="491">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>垂直位置</span>
+              <span id="strategic-label-base-y-val">76.6%</span>
+            </div>
+            <input id="strategic-label-base-y-slider" class="panel-slider" type="range" min="0" max="1000" value="766">
+          </div>
+        </div>
+        <div class="slice-section" data-label="axis">
+          <div class="slice-title">以战略中轴为路</div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>水平位置</span>
+              <span id="strategic-label-axis-x-val">36.2%</span>
+            </div>
+            <input id="strategic-label-axis-x-slider" class="panel-slider" type="range" min="0" max="1000" value="362">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>垂直位置</span>
+              <span id="strategic-label-axis-y-val">39.4%</span>
+            </div>
+            <input id="strategic-label-axis-y-slider" class="panel-slider" type="range" min="0" max="1000" value="394">
+          </div>
+        </div>
+        <div class="slice-section" data-label="slices">
+          <div class="slice-title">以战略课题为门</div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>水平位置</span>
+              <span id="strategic-label-slices-x-val">63.3%</span>
+            </div>
+            <input id="strategic-label-slices-x-slider" class="panel-slider" type="range" min="0" max="1000" value="633">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>垂直位置</span>
+              <span id="strategic-label-slices-y-val">49.5%</span>
+            </div>
+            <input id="strategic-label-slices-y-slider" class="panel-slider" type="range" min="0" max="1000" value="495">
+          </div>
+        </div>
+        <div class="slice-section" data-label="apex">
+          <div class="slice-title">战略顶点</div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>水平位置</span>
+              <span id="strategic-label-apex-x-val">49.1%</span>
+            </div>
+            <input id="strategic-label-apex-x-slider" class="panel-slider" type="range" min="0" max="1000" value="491">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>垂直位置</span>
+              <span id="strategic-label-apex-y-val">12.8%</span>
+            </div>
+            <input id="strategic-label-apex-y-slider" class="panel-slider" type="range" min="0" max="1000" value="128">
+          </div>
         </div>
       </div>
     </section>

@@ -11,14 +11,12 @@ import {
 } from '../ui/edgeFlowControls.js';
 import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
 import { getFootEmissiveIntensity } from '../ui/footControls.js';
-import { getMotionParticleVertexOpacity } from '../utils/motionParticleSettings.js';
 
 const DURATION = 1.35;
 const WIREFRAME_BLOOM_RATIO = 0.38;
 const WIREFRAME_OPACITY = { shell: 0.92, edge: 0.98, slice: 0.85 };
 
 const GLOW_LINE_HIDE_WIRE = 0.06;
-const GLOW_PARTICLE_HIDE = 0.05;
 const GLOW_MESH_HIDE = 0.015;
 const GLOW_GROUP_HIDE = 0.006;
 
@@ -49,7 +47,6 @@ export function restoreGlowObjectVisibility() {
   if (!objects || !glow) return;
 
   if (objects.edgeGlowTubes) objects.edgeGlowTubes.tubeGroup.visible = true;
-  if (objects.vertexPoints) objects.vertexPoints.visible = true;
   objects.sliceEdgeLines.forEach((line) => {
     line.visible = true;
   });
@@ -110,7 +107,6 @@ function setGlowVisualWeight(w) {
     mat.uniforms.uOpacity.value = getEdgeFlowOpacity(weight);
     mat.uniforms.uIntensity.value = getEdgeFlowInnerIntensity(weight);
   });
-  if (mats.vertex) mats.vertex.opacity = getMotionParticleVertexOpacity() * weight;
 }
 
 function setWireframeVisualWeight(t) {
@@ -160,9 +156,6 @@ function syncGlowToWireVisibility(glowWeight, wireWeight) {
   objects.sliceInnerEdgeLines.forEach((line) => {
     line.visible = !hideGlowLines;
   });
-
-  const showDecor = glowWeight > GLOW_PARTICLE_HIDE;
-  if (objects.vertexPoints) objects.vertexPoints.visible = showDecor;
 
   const showMeshes = glowWeight > GLOW_MESH_HIDE;
   objects.meshes.forEach((mesh) => {
