@@ -1,8 +1,8 @@
 import {
-  PYRAMID_EFFECT_MODES,
-  BASE_BLOOM_STRENGTH
+  PYRAMID_EFFECT_MODES
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
+import { getFullBloomStrength } from '../utils/viewAdaptation.js';
 import { resetParticleCloudColors } from '../scene/particlePyramid.js';
 import { applyPyramidColorAndBrightness } from '../ui/pyramidControls.js';
 import { isEffectTransitioning } from './glowWireframeTransition.js';
@@ -113,7 +113,7 @@ function setParticleRevealWeight(progress) {
 
 function applyBloomForTransition(progress) {
   if (!state.bloomPass) return;
-  const fullBloom = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
+  const fullBloom = getFullBloomStrength();
   const wireBloom = fullBloom * WIREFRAME_BLOOM_RATIO;
   const chargeBloom = wireBloom * 1.18;
   const blend = smootherstep(clamp01((progress - 0.08) / 0.92));

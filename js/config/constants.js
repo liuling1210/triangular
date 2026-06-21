@@ -128,6 +128,18 @@ export const DEFAULT_SLICE_OPACITY = {
 export const BASE_TONE_EXPOSURE = 1.2;
 export const BASE_BLOOM_STRENGTH = 0.85;
 export const BASE_LIGHT_INTENSITIES = { key: 1.2, core: 2.5, axis: 2.8 };
+
+/** 发光模式场景灯光与后处理参数（左侧面板可调） */
+export const DEFAULT_GLOW_LIGHT_SETTINGS = {
+  ambientIntensity: BASE_AMBIENT_INTENSITY,
+  keyIntensity: BASE_LIGHT_INTENSITIES.key,
+  fillIntensity: 0.4,
+  coreIntensity: BASE_LIGHT_INTENSITIES.core,
+  bloomStrength: BASE_BLOOM_STRENGTH,
+  bloomThreshold: BLOOM_THRESHOLD,
+  bloomRadius: BLOOM_RADIUS,
+  toneExposure: BASE_TONE_EXPOSURE
+};
 export const BASE_EMISSIVE = { solid: 0.55, base: 0.6, shell: 0.2, axis: 1.6 };
 
 export const RENDER_ORDER = {

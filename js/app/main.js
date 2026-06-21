@@ -14,6 +14,7 @@ import { updateCameraViewTransition } from '../ui/cameraViewControls.js';
 import { setupPyramidAutoRotateUI, updatePyramidAutoRotate } from '../ui/pyramidAutoRotateControls.js';
 import { setupPostProcessing, updateFxaaResolution } from '../postprocessing/setup.js';
 import { applyPyramidColorAndBrightness, setupColorBrightnessUI } from '../ui/pyramidControls.js';
+import { applyGlowLightSettings, setupGlowLightUI } from '../ui/glowLightControls.js';
 import { applyAxisMaterial, setupAxisUI } from '../ui/axisControls.js';
 import { applyFootMaterial, setupFootUI } from '../ui/footControls.js';
 import { updateViewAdaptation } from '../utils/viewAdaptation.js';
@@ -109,6 +110,7 @@ function init() {
   setupPyramidAutoRotateUI();
   setupPanelSections();
   setupColorBrightnessUI(applyAxisMaterial);
+  setupGlowLightUI();
   setupEdgeFlowUI();
   setupMotionParticleUI();
   setupGridUI();
@@ -119,6 +121,7 @@ function init() {
   setupSliceGradientUI();
   setPyramidEffect(state.pyramidEffectMode);
   applyPyramidColorAndBrightness();
+  applyGlowLightSettings();
   applyAxisMaterial();
   applyFootMaterial();
   applyShellMaterial();

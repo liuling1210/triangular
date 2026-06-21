@@ -1,8 +1,8 @@
 import {
-  PYRAMID_EFFECT_MODES,
-  BASE_BLOOM_STRENGTH
+  PYRAMID_EFFECT_MODES
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
+import { getFullBloomStrength } from '../utils/viewAdaptation.js';
 import {
   getEdgeFlowOpacity,
   getEdgeFlowOuterIntensity,
@@ -138,7 +138,7 @@ function setWireframeVisualWeight(t) {
 
 function applyBloomForTransition(progress) {
   if (!state.bloomPass) return;
-  const fullBloom = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
+  const fullBloom = getFullBloomStrength();
   const wireBloom = fullBloom * WIREFRAME_BLOOM_RATIO;
   state.bloomPass.strength = lerp(fullBloom, wireBloom, smootherstep(progress));
 }

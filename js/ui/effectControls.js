@@ -1,9 +1,10 @@
-import { PYRAMID_EFFECT_MODES, BASE_BLOOM_STRENGTH } from '../config/constants.js';
+import { PYRAMID_EFFECT_MODES } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import {
   applyMotionParticleColors,
   getMotionGoldWeightForMode
 } from '../utils/motionParticleColors.js';
+import { getFullBloomStrength } from '../utils/viewAdaptation.js';
 import {
   isEffectTransitioning,
   restoreGlowObjectVisibility
@@ -27,7 +28,7 @@ export function setPyramidEffect(mode) {
   }
 
   if (state.bloomPass && !isEffectTransitioning()) {
-    const fullBloom = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
+    const fullBloom = getFullBloomStrength();
     if (mode === PYRAMID_EFFECT_MODES.WIREFRAME) {
       state.bloomPass.strength = fullBloom * WIREFRAME_BLOOM_RATIO;
     } else if (mode === PYRAMID_EFFECT_MODES.GLOW) {

@@ -1,9 +1,4 @@
 import {
-  BASE_AMBIENT_INTENSITY,
-  BASE_BLOOM_STRENGTH,
-  BASE_LIGHT_INTENSITIES,
-  BLOOM_RADIUS,
-  BLOOM_THRESHOLD,
   TOP_DOWN_BLOOM,
   TOP_DOWN_FOOT_OVERRIDES,
   TOP_DOWN_LIGHT_SCALES
@@ -41,6 +36,10 @@ function getInitialRevealBloomMultiplier() {
 
 export function getViewTopDownBlend() {
   return getCameraTopDownBlend(state.camera, state.controls?.target);
+}
+
+export function getFullBloomStrength() {
+  return state.glowLightSettings.bloomStrength * state.pyramidBrightness;
 }
 
 export function getFootEmissiveIntensityForReveal() {
@@ -95,17 +94,21 @@ export function applyFootViewMaterials(topDownBlend, { applyIntensity = true } =
 export function applyViewAdaptiveLights(topDownBlend) {
   const lights = state.pyramidLights;
   const brightness = state.pyramidBrightness;
+  const settings = state.glowLightSettings;
 
   if (lights.core) {
-    lights.core.intensity = BASE_LIGHT_INTENSITIES.core * brightness
+    lights.core.intensity = settings.coreIntensity * brightness
       * lerp(1, TOP_DOWN_LIGHT_SCALES.core, topDownBlend);
   }
   if (lights.key) {
-    lights.key.intensity = BASE_LIGHT_INTENSITIES.key * brightness
+    lights.key.intensity = settings.keyIntensity * brightness
       * lerp(1, TOP_DOWN_LIGHT_SCALES.key, topDownBlend);
   }
+  if (lights.fill) {
+    lights.fill.intensity = settings.fillIntensity * brightness;
+  }
   if (lights.ambient) {
-    lights.ambient.intensity = BASE_AMBIENT_INTENSITY
+    lights.ambient.intensity = settings.ambientIntensity
       * lerp(1, TOP_DOWN_LIGHT_SCALES.ambient, topDownBlend);
   }
   if (lights.axis) {
@@ -118,10 +121,11 @@ export function applyViewAdaptiveBloom(topDownBlend, revealMultiplier = 1) {
   const bloom = state.bloomPass;
   if (!bloom) return;
 
+  const settings = state.glowLightSettings;
   const strengthScale = lerp(1, TOP_DOWN_BLOOM.strengthScale, topDownBlend);
-  bloom.strength = BASE_BLOOM_STRENGTH * state.pyramidBrightness * strengthScale * revealMultiplier;
-  bloom.threshold = lerp(BLOOM_THRESHOLD, TOP_DOWN_BLOOM.threshold, topDownBlend);
-  bloom.radius = BLOOM_RADIUS;
+  bloom.strength = settings.bloomStrength * state.pyramidBrightness * strengthScale * revealMultiplier;
+  bloom.threshold = lerp(settings.bloomThreshold, TOP_DOWN_BLOOM.threshold, topDownBlend);
+  bloom.radius = settings.bloomRadius;
 }
 
 export function updateViewAdaptation() {

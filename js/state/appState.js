@@ -9,6 +9,7 @@ import {
   DEFAULT_EDGE_FLOW_SETTINGS,
   DEFAULT_GRID_SETTINGS,
   DEFAULT_MOTION_PARTICLE_SETTINGS,
+  DEFAULT_GLOW_LIGHT_SETTINGS,
   DEFAULT_STRATEGIC_LABEL_POSITIONS,
   DEFAULT_STRATEGIC_LABEL_FONT_SIZE,
   DEFAULT_STRATEGIC_APEX_BG,
@@ -25,6 +26,7 @@ export const state = {
   shellSettings: { ...DEFAULT_SHELL_SETTINGS },
   edgeFlowSettings: { ...DEFAULT_EDGE_FLOW_SETTINGS },
   motionParticleSettings: { ...DEFAULT_MOTION_PARTICLE_SETTINGS },
+  glowLightSettings: { ...DEFAULT_GLOW_LIGHT_SETTINGS },
   gridSettings: { ...DEFAULT_GRID_SETTINGS },
   strategicLabelPositions: Object.fromEntries(
     Object.entries(DEFAULT_STRATEGIC_LABEL_POSITIONS).map(([key, position]) => [key, { ...position }])

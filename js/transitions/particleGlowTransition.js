@@ -1,8 +1,8 @@
 import {
-  PYRAMID_EFFECT_MODES,
-  BASE_BLOOM_STRENGTH
+  PYRAMID_EFFECT_MODES
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
+import { getFullBloomStrength } from '../utils/viewAdaptation.js';
 import {
   getEdgeFlowOpacity,
   getEdgeFlowOuterIntensity,
@@ -209,7 +209,7 @@ function syncGlowMaterializeVisibility(coreT, shellT, sliceT, decorT) {
 
 function applyBloomForTransition(progress) {
   if (!state.bloomPass) return;
-  const fullBloom = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
+  const fullBloom = getFullBloomStrength();
   const peakBloom = fullBloom * BLOOM_PEAK_RATIO;
 
   if (progress < CHARGE_END) {
@@ -233,7 +233,7 @@ function applySettlePhase(settleT) {
   }
 
   if (state.bloomPass) {
-    const fullBloom = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
+    const fullBloom = getFullBloomStrength();
     state.bloomPass.strength = lerp(state.bloomPass.strength, fullBloom, smootherstep(settleT));
   }
 }

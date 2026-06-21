@@ -1,6 +1,3 @@
-import {
-  BASE_TONE_EXPOSURE
-} from '../config/constants.js';
 import { state } from '../state/appState.js';
 import {
   getMotionGoldWeightForMode
@@ -34,7 +31,7 @@ export function applyPyramidColorAndBrightness() {
   applyViewAdaptiveBloom(getViewTopDownBlend(), 1);
 
   if (state.renderer) {
-    state.renderer.toneMappingExposure = BASE_TONE_EXPOSURE * state.pyramidBrightness;
+    state.renderer.toneMappingExposure = state.glowLightSettings.toneExposure * state.pyramidBrightness;
   }
 
   const r = Math.round(threeColor.r * 255);

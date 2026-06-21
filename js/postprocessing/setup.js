@@ -1,15 +1,15 @@
-import { BASE_BLOOM_STRENGTH, BLOOM_RADIUS, BLOOM_THRESHOLD } from '../config/constants.js';
 import { state } from '../state/appState.js';
 
 export function setupPostProcessing() {
+  const settings = state.glowLightSettings;
   state.composer = new THREE.EffectComposer(state.renderer);
   state.composer.addPass(new THREE.RenderPass(state.scene, state.camera));
 
   state.bloomPass = new THREE.UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
-    BASE_BLOOM_STRENGTH,
-    BLOOM_RADIUS,
-    BLOOM_THRESHOLD
+    settings.bloomStrength,
+    settings.bloomRadius,
+    settings.bloomThreshold
   );
   state.composer.addPass(state.bloomPass);
 
