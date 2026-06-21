@@ -67,9 +67,8 @@ export function createWireframePyramid(parent, apex, baseVerts, sliceHeights) {
   const baseGeo = new THREE.CylinderGeometry(R, R, 0.04, 3);
   addWireframeMesh(parent, baseGeo, shellMat, -0.02, RENDER_ORDER.base);
 
-  const axisCylHeight = SHAFT_CYL_HEIGHT - SOLID_BOTTOM_HEIGHT;
-  const cylGeo = new THREE.CylinderGeometry(SHAFT_RADIUS, SHAFT_RADIUS, axisCylHeight, 24);
-  addWireframeMesh(parent, cylGeo, edgeMat, SOLID_BOTTOM_HEIGHT + axisCylHeight / 2, RENDER_ORDER.axis);
+  const cylGeo = new THREE.CylinderGeometry(SHAFT_RADIUS, SHAFT_RADIUS, SHAFT_CYL_HEIGHT, 24);
+  addWireframeMesh(parent, cylGeo, edgeMat, SHAFT_CYL_HEIGHT / 2, RENDER_ORDER.axis);
 
   const tipGeo = new THREE.ConeGeometry(SHAFT_RADIUS, SHAFT_TIP_HEIGHT, 24);
   addWireframeMesh(parent, tipGeo, edgeMat, SHAFT_CYL_HEIGHT + SHAFT_TIP_HEIGHT / 2, RENDER_ORDER.axis);
