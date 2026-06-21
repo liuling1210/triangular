@@ -131,17 +131,22 @@ export const BASE_LIGHT_INTENSITIES = { key: 1.2, core: 2.5, axis: 2.8 };
 
 /** 发光模式场景灯光与后处理参数（左侧面板可调） */
 export const DEFAULT_GLOW_LIGHT_SETTINGS = {
-  ambientIntensity: 0.45,
-  keyIntensity: 1.27,
-  fillIntensity: 0.08,
-  coreIntensity: 1.79,
+  ambientIntensity: 1.08,
+  keyIntensity: 1.31,
+  fillIntensity: 0.47,
+  coreIntensity: 2.54,
+  ambientSoftness: 0.35,
+  keySoftness: 0.25,
+  fillSoftness: 0.45,
+  coreSoftness: 0.4,
+  axisSoftness: 0.35,
   bloomStrength: 0.28,
   bloomThreshold: 0.27,
   bloomRadius: 0.27,
   toneExposure: 1.18,
-  keyPosition: { x: 4, y: 8, z: 6 },
-  fillPosition: { x: -5, y: 3, z: -4 },
-  corePosition: { x: 0, y: 1.5, z: 0 },
+  keyPosition: { x: -6.74, y: 12.11, z: 1.72 },
+  fillPosition: { x: 0.64, y: 3.92, z: 1.43 },
+  corePosition: { x: -5.56, y: 0.97, z: 0 },
   axisLightPosition: { x: 0, y: 1.65, z: 0 }
 };
 

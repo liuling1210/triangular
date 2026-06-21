@@ -24,6 +24,9 @@ export function applyAxisMaterial() {
   if (state.pyramidLights.axis) {
     state.pyramidLights.axis.color.copy(baseColor);
   }
+  if (state.pyramidLights.axisSoft) {
+    state.pyramidLights.axisSoft.color.copy(baseColor);
+  }
 
   document.getElementById('axis-color-hex-label').textContent = state.axisSettings.color.toUpperCase();
   document.getElementById('axis-color-preview').style.background = state.axisSettings.color;

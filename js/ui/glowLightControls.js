@@ -5,6 +5,14 @@ import {
   getViewTopDownBlend
 } from '../utils/viewAdaptation.js';
 
+const SOFTNESS_LIGHTS = [
+  { key: 'ambientSoftness', prefix: 'glow-light-ambient-soft' },
+  { key: 'keySoftness', prefix: 'glow-light-key-soft' },
+  { key: 'fillSoftness', prefix: 'glow-light-fill-soft' },
+  { key: 'coreSoftness', prefix: 'glow-light-core-soft' },
+  { key: 'axisSoftness', prefix: 'glow-light-axis-soft' }
+];
+
 const POSITION_LIGHTS = [
   { lightKey: 'key', positionKey: 'keyPosition', prefix: 'glow-light-key' },
   { lightKey: 'fill', positionKey: 'fillPosition', prefix: 'glow-light-fill' },
@@ -30,6 +38,10 @@ function syncGlowLightLabels() {
   document.getElementById('glow-light-bloom-threshold-val').textContent = pct(glowLightSettings.bloomThreshold);
   document.getElementById('glow-light-bloom-radius-val').textContent = pct(glowLightSettings.bloomRadius);
   document.getElementById('glow-light-exposure-val').textContent = pct(glowLightSettings.toneExposure);
+
+  SOFTNESS_LIGHTS.forEach(({ key, prefix }) => {
+    document.getElementById(`${prefix}-val`).textContent = pct(glowLightSettings[key]);
+  });
 
   POSITION_LIGHTS.forEach(({ positionKey, prefix }) => {
     const position = glowLightSettings[positionKey];
@@ -67,6 +79,10 @@ export function setupGlowLightUI() {
   bind('glow-light-bloom-threshold-slider', 'bloomThreshold');
   bind('glow-light-bloom-radius-slider', 'bloomRadius');
   bind('glow-light-exposure-slider', 'toneExposure');
+
+  SOFTNESS_LIGHTS.forEach(({ key, prefix }) => {
+    bind(`${prefix}-slider`, key);
+  });
 
   POSITION_LIGHTS.forEach(({ positionKey, prefix }) => {
     ['x', 'y', 'z'].forEach((axis) => {

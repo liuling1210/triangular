@@ -5,6 +5,7 @@ import {
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import { getCameraTopDownBlend } from './cameraPreset.js';
+import { applyLightSoftness } from './lightSoftness.js';
 
 const REVEAL_BLOOM_RAMP_END_OFFSET = 1.25 + 1.2 + 1.4 + 1.0 + 1.8;
 
@@ -135,6 +136,8 @@ export function applyViewAdaptiveLights(topDownBlend) {
       settings.axisLightPosition.z
     );
   }
+
+  applyLightSoftness(topDownBlend);
 }
 
 export function applyViewAdaptiveBloom(topDownBlend, revealMultiplier = 1) {

@@ -28,6 +28,9 @@ export function applyPyramidColorAndBrightness() {
   if (pyramidLights.core) {
     pyramidLights.core.color.copy(threeColor);
   }
+  if (pyramidLights.coreSoft) {
+    pyramidLights.coreSoft.color.copy(threeColor);
+  }
   applyViewAdaptiveBloom(getViewTopDownBlend(), 1);
 
   if (state.renderer) {
