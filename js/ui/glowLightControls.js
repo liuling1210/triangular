@@ -5,8 +5,19 @@ import {
   getViewTopDownBlend
 } from '../utils/viewAdaptation.js';
 
+const POSITION_LIGHTS = [
+  { lightKey: 'key', positionKey: 'keyPosition', prefix: 'glow-light-key' },
+  { lightKey: 'fill', positionKey: 'fillPosition', prefix: 'glow-light-fill' },
+  { lightKey: 'core', positionKey: 'corePosition', prefix: 'glow-light-core' },
+  { lightKey: 'axis', positionKey: 'axisLightPosition', prefix: 'glow-light-axis' }
+];
+
 function pct(value) {
   return `${Math.round(value * 100)}%`;
+}
+
+function posText(value) {
+  return value.toFixed(2);
 }
 
 function syncGlowLightLabels() {
@@ -19,6 +30,13 @@ function syncGlowLightLabels() {
   document.getElementById('glow-light-bloom-threshold-val').textContent = pct(glowLightSettings.bloomThreshold);
   document.getElementById('glow-light-bloom-radius-val').textContent = pct(glowLightSettings.bloomRadius);
   document.getElementById('glow-light-exposure-val').textContent = pct(glowLightSettings.toneExposure);
+
+  POSITION_LIGHTS.forEach(({ positionKey, prefix }) => {
+    const position = glowLightSettings[positionKey];
+    ['x', 'y', 'z'].forEach((axis) => {
+      document.getElementById(`${prefix}-${axis}-val`).textContent = posText(position[axis]);
+    });
+  });
 }
 
 export function applyGlowLightSettings() {
@@ -49,4 +67,13 @@ export function setupGlowLightUI() {
   bind('glow-light-bloom-threshold-slider', 'bloomThreshold');
   bind('glow-light-bloom-radius-slider', 'bloomRadius');
   bind('glow-light-exposure-slider', 'toneExposure');
+
+  POSITION_LIGHTS.forEach(({ positionKey, prefix }) => {
+    ['x', 'y', 'z'].forEach((axis) => {
+      document.getElementById(`${prefix}-${axis}-slider`).addEventListener('input', (e) => {
+        state.glowLightSettings[positionKey][axis] = parseFloat(e.target.value) / 100;
+        applyGlowLightSettings();
+      });
+    });
+  });
 }

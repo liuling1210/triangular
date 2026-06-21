@@ -68,17 +68,17 @@ export const DEFAULT_AXIS_SETTINGS = {
 
 /** 三棱锥上半段玻璃外壳（shell）材质参数 */
 export const DEFAULT_SHELL_SETTINGS = {
-  color: '#FFFFFF',
-  colorBrightness: 0.74,
+  color: '#C6DFEB',
+  colorBrightness: 0.83,
   emissiveStrength: 0.1,
-  emissiveIntensity: 0.2,
-  opacity: 0.64,
-  transmission: 0.4,
-  thickness: 1.56,
-  roughness: 0.3,
-  metalness: 0.1,
-  clearcoat: 0.7,
-  clearcoatRoughness: 0.12
+  emissiveIntensity: 1.6,
+  opacity: 0.95,
+  transmission: 0.43,
+  thickness: 2.03,
+  roughness: 0.11,
+  metalness: 0.56,
+  clearcoat: 0,
+  clearcoatRoughness: 1
 };
 
 /** 底部实心段（solid）与底面盖板（base）共用材质参数 */
@@ -131,15 +131,29 @@ export const BASE_LIGHT_INTENSITIES = { key: 1.2, core: 2.5, axis: 2.8 };
 
 /** 发光模式场景灯光与后处理参数（左侧面板可调） */
 export const DEFAULT_GLOW_LIGHT_SETTINGS = {
-  ambientIntensity: BASE_AMBIENT_INTENSITY,
-  keyIntensity: BASE_LIGHT_INTENSITIES.key,
-  fillIntensity: 0.4,
-  coreIntensity: BASE_LIGHT_INTENSITIES.core,
-  bloomStrength: BASE_BLOOM_STRENGTH,
-  bloomThreshold: BLOOM_THRESHOLD,
-  bloomRadius: BLOOM_RADIUS,
-  toneExposure: BASE_TONE_EXPOSURE
+  ambientIntensity: 0.45,
+  keyIntensity: 1.27,
+  fillIntensity: 0.08,
+  coreIntensity: 1.79,
+  bloomStrength: 0.28,
+  bloomThreshold: 0.27,
+  bloomRadius: 0.27,
+  toneExposure: 1.18,
+  keyPosition: { x: 4, y: 8, z: 6 },
+  fillPosition: { x: -5, y: 3, z: -4 },
+  corePosition: { x: 0, y: 1.5, z: 0 },
+  axisLightPosition: { x: 0, y: 1.65, z: 0 }
 };
+
+export function cloneGlowLightSettings(source = DEFAULT_GLOW_LIGHT_SETTINGS) {
+  return {
+    ...source,
+    keyPosition: { ...source.keyPosition },
+    fillPosition: { ...source.fillPosition },
+    corePosition: { ...source.corePosition },
+    axisLightPosition: { ...source.axisLightPosition }
+  };
+}
 export const BASE_EMISSIVE = { solid: 0.55, base: 0.6, shell: 0.2, axis: 1.6 };
 
 export const RENDER_ORDER = {

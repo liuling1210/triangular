@@ -99,13 +99,28 @@ export function applyViewAdaptiveLights(topDownBlend) {
   if (lights.core) {
     lights.core.intensity = settings.coreIntensity * brightness
       * lerp(1, TOP_DOWN_LIGHT_SCALES.core, topDownBlend);
+    lights.core.position.set(
+      settings.corePosition.x,
+      settings.corePosition.y,
+      settings.corePosition.z
+    );
   }
   if (lights.key) {
     lights.key.intensity = settings.keyIntensity * brightness
       * lerp(1, TOP_DOWN_LIGHT_SCALES.key, topDownBlend);
+    lights.key.position.set(
+      settings.keyPosition.x,
+      settings.keyPosition.y,
+      settings.keyPosition.z
+    );
   }
   if (lights.fill) {
     lights.fill.intensity = settings.fillIntensity * brightness;
+    lights.fill.position.set(
+      settings.fillPosition.x,
+      settings.fillPosition.y,
+      settings.fillPosition.z
+    );
   }
   if (lights.ambient) {
     lights.ambient.intensity = settings.ambientIntensity
@@ -114,6 +129,11 @@ export function applyViewAdaptiveLights(topDownBlend) {
   if (lights.axis) {
     lights.axis.intensity = state.axisSettings.lightIntensity * brightness
       * lerp(1, TOP_DOWN_LIGHT_SCALES.axis, topDownBlend);
+    lights.axis.position.set(
+      settings.axisLightPosition.x,
+      settings.axisLightPosition.y,
+      settings.axisLightPosition.z
+    );
   }
 }
 
