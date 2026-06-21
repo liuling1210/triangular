@@ -11,7 +11,10 @@ export const FRONT_VIEW_CAMERA = {
   azimuth: 1.027
 };
 
-export const DEFAULT_PYRAMID_COLOR = '#E8CB96';
+export const DEFAULT_PYRAMID_COLOR = '#907647';
+/** 初始俯视底面轮廓描边 */
+export const REVEAL_CONTOUR_LINE_COLOR = '#AD834E';
+export const REVEAL_CONTOUR_LINE_WIDTH = 0.010;
 export const SHOW_LABELS = false;
 export const DEFAULT_BRIGHTNESS = 0.74;
 
@@ -47,12 +50,12 @@ export const DEFAULT_STRATEGIC_LABEL_FONT_SIZE = 26;
 export const STRATEGIC_LABEL_FONT_SIZE_RANGE = { min: 10, max: 40 };
 
 export const DEFAULT_SLICE_GRADIENTS = [
-  { start: '#383838', end: '#B6AE58' },
-  { start: '#323232', end: '#B6AE58' }
+  { start: '#1C1C1C', end: '#D6B884' },
+  { start: '#1C1C1C', end: '#D3BB92' }
 ];
 
 export const DEFAULT_AXIS_SETTINGS = {
-  color: '#B6AE58',
+  color: '#AA937A',
   colorBrightness: 1.75,
   emissiveStrength: 0.95,
   emissiveIntensity: 0.44,
@@ -66,12 +69,12 @@ export const DEFAULT_AXIS_SETTINGS = {
 /** 三棱锥上半段玻璃外壳（shell）材质参数 */
 export const DEFAULT_SHELL_SETTINGS = {
   color: '#FFFFFF',
-  colorBrightness: 0.62,
+  colorBrightness: 0.74,
   emissiveStrength: 0.1,
   emissiveIntensity: 0.2,
-  opacity: 0.42,
-  transmission: 0.5,
-  thickness: 1.5,
+  opacity: 0.64,
+  transmission: 0.4,
+  thickness: 1.56,
   roughness: 0.3,
   metalness: 0.1,
   clearcoat: 0.7,
@@ -80,15 +83,41 @@ export const DEFAULT_SHELL_SETTINGS = {
 
 /** 底部实心段（solid）与底面盖板（base）共用材质参数 */
 export const DEFAULT_FOOT_SETTINGS = {
-  color: '#DDB873',
+  color: '#B3966E',
   colorBrightness: 1,
   emissiveStrength: 0.25,
-  emissiveIntensity: 0.575,
+  emissiveIntensity: 0.57,
   metalness: 0.9,
   roughness: 0.15,
   clearcoat: 0.8,
   clearcoatRoughness: 0.1
 };
+
+/** 俯视时压低底面镜面高光与自发光，避免中心灯圈 / 整面过曝 */
+export const TOP_DOWN_FOOT_OVERRIDES = {
+  metalness: 0.1,
+  roughness: 0.72,
+  clearcoat: 0,
+  clearcoatRoughness: 0.2,
+  colorBrightness: 0.88,
+  emissiveIntensity: 0.15
+};
+
+export const TOP_DOWN_LIGHT_SCALES = {
+  core: 0.12,
+  key: 0.6,
+  ambient: 0.8,
+  axis: 0
+};
+
+export const TOP_DOWN_BLOOM = {
+  strengthScale: 0.55,
+  threshold: 0.5
+};
+
+export const BASE_AMBIENT_INTENSITY = 0.6;
+export const BLOOM_THRESHOLD = 0.15;
+export const BLOOM_RADIUS = 0.45;
 
 export const DEFAULT_SLICE_OPACITY = {
   opacityCenter: 0.34,
@@ -114,7 +143,7 @@ export const RENDER_ORDER = {
 };
 
 export const EDGE_FLOW = {
-  outerRadius: 0.024,
+  outerRadius: 0.011,
   innerRadius: 0.005,
   tubularSegments: 96,
   radialSegments: 8,
@@ -161,6 +190,8 @@ export const SOLID_CAP_HEIGHT = 0.04;
 export const R = 2.0;
 export const H = 3.0;
 export const PYRAMID_EFFECT_MODES = { GLOW: 'glow', WIREFRAME: 'wireframe', PARTICLES: 'particles' };
+/** 粒子效果模式中的点云颜色 RGB(194, 168, 144) */
+export const PARTICLE_EFFECT_COLOR = '#C2A890';
 export const WIREFRAME_MOTION_COLOR = '#ffffff';
 export const SHAFT_RADIUS = 0.05;
 export const SHAFT_CYL_HEIGHT = H - 0.2;
@@ -221,7 +252,7 @@ export const DEFAULT_GRID_SETTINGS = {
 export const GLITCH_BG = {
   chars: ['J', 'Z', 'X', '+'],
   slotCount: 24,
-  color: '#E8CB96',
+  color: '#907647',
   fontSizeMin: 12,
   fontSizeMax: 22,
   opacityMin: 0.18,

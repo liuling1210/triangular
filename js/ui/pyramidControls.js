@@ -1,12 +1,11 @@
 import {
-  BASE_TONE_EXPOSURE,
-  BASE_BLOOM_STRENGTH,
-  BASE_LIGHT_INTENSITIES
+  BASE_TONE_EXPOSURE
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import {
   getMotionGoldWeightForMode
 } from '../utils/motionParticleColors.js';
+import { applyViewAdaptiveBloom, getViewTopDownBlend } from '../utils/viewAdaptation.js';
 import { applyEdgeFlowAppearance } from './edgeFlowControls.js';
 import { applyFootMaterial } from './footControls.js';
 import { applyMotionParticleAppearance } from './motionParticleControls.js';
@@ -31,17 +30,11 @@ export function applyPyramidColorAndBrightness() {
 
   if (pyramidLights.core) {
     pyramidLights.core.color.copy(threeColor);
-    pyramidLights.core.intensity = BASE_LIGHT_INTENSITIES.core * state.pyramidBrightness;
   }
-  if (pyramidLights.key) {
-    pyramidLights.key.intensity = BASE_LIGHT_INTENSITIES.key * state.pyramidBrightness;
-  }
+  applyViewAdaptiveBloom(getViewTopDownBlend(), 1);
 
   if (state.renderer) {
     state.renderer.toneMappingExposure = BASE_TONE_EXPOSURE * state.pyramidBrightness;
-  }
-  if (state.bloomPass) {
-    state.bloomPass.strength = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
   }
 
   const r = Math.round(threeColor.r * 255);

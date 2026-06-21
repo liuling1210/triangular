@@ -1,4 +1,4 @@
-import { BASE_BLOOM_STRENGTH } from '../config/constants.js';
+import { BASE_BLOOM_STRENGTH, BLOOM_RADIUS, BLOOM_THRESHOLD } from '../config/constants.js';
 import { state } from '../state/appState.js';
 
 export function setupPostProcessing() {
@@ -8,8 +8,8 @@ export function setupPostProcessing() {
   state.bloomPass = new THREE.UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
     BASE_BLOOM_STRENGTH,
-    0.45,
-    0.15
+    BLOOM_RADIUS,
+    BLOOM_THRESHOLD
   );
   state.composer.addPass(state.bloomPass);
 

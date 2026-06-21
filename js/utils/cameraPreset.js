@@ -1,16 +1,13 @@
-function roundCoord(value) {
-  return Math.round(value * 1000) / 1000;
-}
-
-function vec3ToCoords(vector) {
-  return {
-    x: roundCoord(vector.x),
-    y: roundCoord(vector.y),
-    z: roundCoord(vector.z)
-  };
-}
-
 const TOP_DOWN_XZ_EPS = 0.08;
+
+function clamp01(v) {
+  return Math.max(0, Math.min(1, v));
+}
+
+function smootherstep(t) {
+  t = clamp01(t);
+  return t * t * t * (t * (t * 6 - 15) + 10);
+}
 
 function isTopDownView(position, target) {
   const dx = position.x - target.x;
@@ -22,10 +19,6 @@ function isTopDownView(position, target) {
 export function computeVertex1TopAzimuth(baseVerts) {
   const v = baseVerts[0];
   return Math.PI - Math.atan2(v.x, v.z);
-}
-
-function getTopDownAzimuth(camera) {
-  return Math.atan2(camera.up.x, -camera.up.z);
 }
 
 function applyTopDownOrientation(camera, target, azimuth) {
@@ -70,37 +63,13 @@ export function applyCameraPreset(camera, preset, controls = null, baseVerts = n
   controls?.update();
 }
 
-export function getCameraPreset(camera, controls) {
-  const preset = {
-    position: vec3ToCoords(camera.position),
-    target: vec3ToCoords(controls.target)
-  };
+/** 0 = 正视，1 = 俯视；相机仰角越大值越高 */
+export function getCameraTopDownBlend(camera, target) {
+  if (!camera || !target) return 0;
 
-  if (isTopDownView(camera.position, controls.target)) {
-    preset.azimuth = roundCoord(getTopDownAzimuth(camera));
-    preset.alignVertex1ToTop = true;
-  } else {
-    preset.azimuth = roundCoord(controls.getAzimuthalAngle());
-  }
+  const dir = new THREE.Vector3().subVectors(camera.position, target);
+  const horiz = Math.hypot(dir.x, dir.z);
+  const elevFromHoriz = Math.atan2(Math.abs(dir.y), Math.max(horiz, 1e-4));
 
-  return preset;
-}
-
-export function formatCameraPresetCode(preset) {
-  const fmt = ({ x, y, z }) => `{ x: ${x}, y: ${y}, z: ${z} }`;
-  const lines = [
-    'const INITIAL_CAMERA = {',
-    `  position: ${fmt(preset.position)},`,
-    `  target: ${fmt(preset.target)},`
-  ];
-
-  if (preset.azimuth != null) {
-    lines.push(`  azimuth: ${preset.azimuth},`);
-  }
-  if (preset.alignVertex1ToTop) {
-    lines.push('  alignVertex1ToTop: true,');
-  }
-
-  lines.push('};');
-  return lines.join('\n');
+  return smootherstep(elevFromHoriz, 0.4, 1.05);
 }

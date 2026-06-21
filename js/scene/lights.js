@@ -1,13 +1,16 @@
 import {
   DEFAULT_PYRAMID_COLOR,
   DEFAULT_AXIS_SETTINGS,
+  BASE_AMBIENT_INTENSITY,
   BASE_LIGHT_INTENSITIES,
   H
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 
 export function setupLights() {
-  state.scene.add(new THREE.AmbientLight(0x1a1208, 0.6));
+  const ambient = new THREE.AmbientLight(0x1a1208, BASE_AMBIENT_INTENSITY);
+  state.pyramidLights.ambient = ambient;
+  state.scene.add(ambient);
 
   const keyLight = new THREE.DirectionalLight(0xfff0d0, BASE_LIGHT_INTENSITIES.key);
   keyLight.position.set(4, 8, 6);

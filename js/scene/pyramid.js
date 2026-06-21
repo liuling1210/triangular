@@ -283,7 +283,7 @@ export function createPyramid() {
       opacity: 0.98,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-      depthTest: false
+      depthTest: true
     });
     state.pyramidMats.sliceEdges.push(sliceEdgeMat);
     const sliceEdge = new THREE.LineSegments(sliceEdgeGeo, sliceEdgeMat);
@@ -301,7 +301,7 @@ export function createPyramid() {
       opacity: 0.72,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-      depthTest: false
+      depthTest: true
     });
     state.pyramidMats.sliceInnerEdges.push(innerEdgeMat);
     const innerEdge = new THREE.LineSegments(innerEdgeGeo, innerEdgeMat);
@@ -323,17 +323,15 @@ export function createPyramid() {
     transmission: 0,
     depthWrite: true,
     depthTest: true,
-    polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -2,
     side: THREE.FrontSide
   });
   state.pyramidMats.axis = axisMat;
 
   const axisShaft = new THREE.Group();
-  const cylGeo = new THREE.CylinderGeometry(SHAFT_RADIUS, SHAFT_RADIUS, SHAFT_CYL_HEIGHT, 64);
+  const axisCylHeight = SHAFT_CYL_HEIGHT - SOLID_BOTTOM_HEIGHT;
+  const cylGeo = new THREE.CylinderGeometry(SHAFT_RADIUS, SHAFT_RADIUS, axisCylHeight, 64);
   const cylMesh = new THREE.Mesh(cylGeo, axisMat);
-  cylMesh.position.y = SHAFT_CYL_HEIGHT / 2;
+  cylMesh.position.y = SOLID_BOTTOM_HEIGHT + axisCylHeight / 2;
   cylMesh.renderOrder = RENDER_ORDER.axis;
   axisShaft.add(cylMesh);
 

@@ -1,28 +1,20 @@
 import { state } from '../state/appState.js';
-
-function applyToFootMat(mat) {
-  if (!mat) return;
-  const baseColor = new THREE.Color(state.footSettings.color);
-  const surfaceColor = baseColor.clone().multiplyScalar(state.footSettings.colorBrightness);
-  const emissiveColor = baseColor.clone().multiplyScalar(state.footSettings.emissiveStrength);
-
-  mat.color.copy(surfaceColor);
-  mat.emissive.copy(emissiveColor);
-  mat.emissiveIntensity = state.footSettings.emissiveIntensity * state.pyramidBrightness;
-  mat.metalness = state.footSettings.metalness;
-  mat.roughness = state.footSettings.roughness;
-  mat.clearcoat = state.footSettings.clearcoat;
-  mat.clearcoatRoughness = state.footSettings.clearcoatRoughness;
-  mat.needsUpdate = true;
-}
+import {
+  applyFootViewMaterials,
+  applyViewAdaptiveBloom,
+  applyViewAdaptiveLights,
+  getViewTopDownBlend
+} from '../utils/viewAdaptation.js';
 
 export function getFootEmissiveIntensity() {
   return state.footSettings.emissiveIntensity;
 }
 
 export function applyFootMaterial() {
-  applyToFootMat(state.pyramidMats.solid);
-  applyToFootMat(state.pyramidMats.base);
+  const topDownBlend = getViewTopDownBlend();
+  applyFootViewMaterials(topDownBlend, { applyIntensity: true });
+  applyViewAdaptiveLights(topDownBlend);
+  applyViewAdaptiveBloom(topDownBlend, 1);
 
   const { footSettings } = state;
   document.getElementById('foot-color-hex-label').textContent = footSettings.color.toUpperCase();

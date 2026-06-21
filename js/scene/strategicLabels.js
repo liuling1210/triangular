@@ -130,5 +130,5 @@ export function updateStrategicLabelReveal(elapsed, timeline, reveal = null) {
   );
   setStrategicLabelOpacity('axis', phaseOpacity(elapsed, timeline.axis));
   setStrategicLabelOpacity('slices', phaseOpacity(elapsed, timeline.slices));
-  setStrategicLabelOpacity('apex', phaseOpacity(elapsed, timeline.shellEdges));
+  setStrategicLabelOpacity('apex', phaseOpacity(elapsed, timeline.slices));
 }

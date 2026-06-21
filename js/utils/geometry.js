@@ -4,7 +4,8 @@ import {
   PYRAMID_Y_OFFSET,
   SHAFT_RADIUS,
   SHAFT_CYL_HEIGHT,
-  SHAFT_TIP_HEIGHT
+  SHAFT_TIP_HEIGHT,
+  SOLID_BOTTOM_HEIGHT
 } from '../config/constants.js';
 
 export function createPyramidConeGeo() {
@@ -87,7 +88,7 @@ export function sampleTriangle(A, B, C, count, out) {
 
 export function pillarRadiusAt(y) {
   const shaftTop = SHAFT_CYL_HEIGHT + SHAFT_TIP_HEIGHT;
-  if (y < 0 || y > shaftTop) return 0;
+  if (y < SOLID_BOTTOM_HEIGHT || y > shaftTop) return 0;
   if (y <= SHAFT_CYL_HEIGHT) return SHAFT_RADIUS;
   return SHAFT_RADIUS * (1 - (y - SHAFT_CYL_HEIGHT) / SHAFT_TIP_HEIGHT);
 }

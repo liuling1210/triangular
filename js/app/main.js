@@ -10,13 +10,13 @@ import {
 import { createLabels } from '../scene/labels.js';
 import { setupLights } from '../scene/lights.js';
 import { setupControls } from '../scene/controls.js';
-import { setupCameraInfoPopup } from '../ui/cameraInfoPopup.js';
-import { setupCameraViewUI, updateCameraViewTransition } from '../ui/cameraViewControls.js';
+import { updateCameraViewTransition } from '../ui/cameraViewControls.js';
 import { setupPyramidAutoRotateUI, updatePyramidAutoRotate } from '../ui/pyramidAutoRotateControls.js';
 import { setupPostProcessing, updateFxaaResolution } from '../postprocessing/setup.js';
 import { applyPyramidColorAndBrightness, setupColorBrightnessUI } from '../ui/pyramidControls.js';
 import { applyAxisMaterial, setupAxisUI } from '../ui/axisControls.js';
 import { applyFootMaterial, setupFootUI } from '../ui/footControls.js';
+import { updateViewAdaptation } from '../utils/viewAdaptation.js';
 import { applyShellMaterial, setupShellUI } from '../ui/shellControls.js';
 import { setupSliceGradientUI } from '../ui/sliceControls.js';
 import { setupEdgeFlowUI } from '../ui/edgeFlowControls.js';
@@ -25,17 +25,14 @@ import { setupGridUI } from '../ui/gridControls.js';
 import { setupStrategicLabelUI } from '../ui/strategicLabelControls.js';
 import { setupPanelSections } from '../ui/panelSections.js';
 import { setupColorEyedroppers } from '../ui/colorEyedropper.js';
-import { setupEffectUI } from '../ui/effectControls.js';
+import { setPyramidEffect } from '../ui/effectControls.js';
 import {
-  setupGlowWireTransitionUI,
   updateGlowWireTransition
 } from '../transitions/glowWireframeTransition.js';
 import {
-  setupWireParticleTransitionUI,
   updateWireParticleTransition
 } from '../transitions/wireframeParticleTransition.js';
 import {
-  setupParticleGlowTransitionUI,
   updateParticleGlowTransition
 } from '../transitions/particleGlowTransition.js';
 import {
@@ -70,6 +67,7 @@ function animate() {
   updateWireParticleTransition();
   updateParticleGlowTransition();
   updateInitialReveal();
+  updateViewAdaptation();
   updateGlitchBackground();
   state.composer.render();
   if (SHOW_LABELS || state.baseCornerMarkers.length) {
@@ -108,8 +106,6 @@ function init() {
   setupLights();
   setupPostProcessing();
   setupControls();
-  setupCameraInfoPopup();
-  setupCameraViewUI();
   setupPyramidAutoRotateUI();
   setupPanelSections();
   setupColorBrightnessUI(applyAxisMaterial);
@@ -121,10 +117,7 @@ function init() {
   setupFootUI();
   setupShellUI();
   setupSliceGradientUI();
-  setupEffectUI();
-  setupGlowWireTransitionUI();
-  setupWireParticleTransitionUI();
-  setupParticleGlowTransitionUI();
+  setPyramidEffect(state.pyramidEffectMode);
   applyPyramidColorAndBrightness();
   applyAxisMaterial();
   applyFootMaterial();

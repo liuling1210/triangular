@@ -1,0 +1,134 @@
+import {
+  BASE_AMBIENT_INTENSITY,
+  BASE_BLOOM_STRENGTH,
+  BASE_LIGHT_INTENSITIES,
+  BLOOM_RADIUS,
+  BLOOM_THRESHOLD,
+  TOP_DOWN_BLOOM,
+  TOP_DOWN_FOOT_OVERRIDES,
+  TOP_DOWN_LIGHT_SCALES
+} from '../config/constants.js';
+import { state } from '../state/appState.js';
+import { getCameraTopDownBlend } from './cameraPreset.js';
+
+const REVEAL_BLOOM_RAMP_END_OFFSET = 1.25 + 1.2 + 1.4 + 1.0 + 1.8;
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function clamp01(v) {
+  return Math.max(0, Math.min(1, v));
+}
+
+function smootherstep(t) {
+  t = clamp01(t);
+  return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+function getInitialRevealBloomMultiplier() {
+  const reveal = state.initialReveal;
+  if (!reveal || !state.clock || reveal.startTime == null) return 1;
+
+  const elapsed = state.clock.getElapsedTime() - reveal.startTime;
+  const baseStart = reveal.baseSolidStartTime;
+  const rampEnd = baseStart == null
+    ? reveal.duration
+    : baseStart + REVEAL_BLOOM_RAMP_END_OFFSET;
+
+  return lerp(0.65, 1, smootherstep(clamp01(elapsed / Math.max(rampEnd, 0.001))));
+}
+
+export function getViewTopDownBlend() {
+  return getCameraTopDownBlend(state.camera, state.controls?.target);
+}
+
+export function getFootEmissiveIntensityForReveal() {
+  const blend = getViewTopDownBlend();
+  return lerp(
+    state.footSettings.emissiveIntensity,
+    TOP_DOWN_FOOT_OVERRIDES.emissiveIntensity,
+    blend
+  );
+}
+
+export function applyFootViewMaterials(topDownBlend, { applyIntensity = true } = {}) {
+  const settings = state.footSettings;
+  const overrides = TOP_DOWN_FOOT_OVERRIDES;
+
+  [state.pyramidMats.solid, state.pyramidMats.base].forEach((mat) => {
+    if (!mat) return;
+
+    const baseColor = new THREE.Color(settings.color);
+    const brightness = lerp(settings.colorBrightness, overrides.colorBrightness, topDownBlend);
+    const surfaceColor = baseColor.clone().multiplyScalar(brightness);
+    const emissiveColor = baseColor.clone().multiplyScalar(settings.emissiveStrength);
+
+    mat.color.copy(surfaceColor);
+    mat.emissive.copy(emissiveColor);
+    mat.metalness = lerp(settings.metalness, overrides.metalness, topDownBlend);
+    mat.roughness = lerp(settings.roughness, overrides.roughness, topDownBlend);
+    mat.clearcoat = lerp(settings.clearcoat, overrides.clearcoat, topDownBlend);
+    mat.clearcoatRoughness = lerp(
+      settings.clearcoatRoughness,
+      overrides.clearcoatRoughness,
+      topDownBlend
+    );
+    mat.needsUpdate = true;
+  });
+
+  if (applyIntensity) {
+    const intensity = lerp(
+      settings.emissiveIntensity,
+      overrides.emissiveIntensity,
+      topDownBlend
+    ) * state.pyramidBrightness;
+    if (state.pyramidMats.solid) {
+      state.pyramidMats.solid.emissiveIntensity = intensity;
+    }
+    if (state.pyramidMats.base) {
+      state.pyramidMats.base.emissiveIntensity = intensity;
+    }
+  }
+}
+
+export function applyViewAdaptiveLights(topDownBlend) {
+  const lights = state.pyramidLights;
+  const brightness = state.pyramidBrightness;
+
+  if (lights.core) {
+    lights.core.intensity = BASE_LIGHT_INTENSITIES.core * brightness
+      * lerp(1, TOP_DOWN_LIGHT_SCALES.core, topDownBlend);
+  }
+  if (lights.key) {
+    lights.key.intensity = BASE_LIGHT_INTENSITIES.key * brightness
+      * lerp(1, TOP_DOWN_LIGHT_SCALES.key, topDownBlend);
+  }
+  if (lights.ambient) {
+    lights.ambient.intensity = BASE_AMBIENT_INTENSITY
+      * lerp(1, TOP_DOWN_LIGHT_SCALES.ambient, topDownBlend);
+  }
+  if (lights.axis) {
+    lights.axis.intensity = state.axisSettings.lightIntensity * brightness
+      * lerp(1, TOP_DOWN_LIGHT_SCALES.axis, topDownBlend);
+  }
+}
+
+export function applyViewAdaptiveBloom(topDownBlend, revealMultiplier = 1) {
+  const bloom = state.bloomPass;
+  if (!bloom) return;
+
+  const strengthScale = lerp(1, TOP_DOWN_BLOOM.strengthScale, topDownBlend);
+  bloom.strength = BASE_BLOOM_STRENGTH * state.pyramidBrightness * strengthScale * revealMultiplier;
+  bloom.threshold = lerp(BLOOM_THRESHOLD, TOP_DOWN_BLOOM.threshold, topDownBlend);
+  bloom.radius = BLOOM_RADIUS;
+}
+
+export function updateViewAdaptation() {
+  const topDownBlend = getViewTopDownBlend();
+  const skipEmissiveIntensity = Boolean(state.initialReveal);
+
+  applyFootViewMaterials(topDownBlend, { applyIntensity: !skipEmissiveIntensity });
+  applyViewAdaptiveLights(topDownBlend);
+  applyViewAdaptiveBloom(topDownBlend, getInitialRevealBloomMultiplier());
+}

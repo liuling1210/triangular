@@ -2,6 +2,7 @@ import { GRID, GRID_MAX_RINGS, getGridRingRadii, syncGridDerivedSettings } from 
 import { state } from '../state/appState.js';
 
 const TAU = Math.PI * 2;
+const GRID_REVEAL_DASHED_OPACITY = 0.6;
 
 function syncRingRadiusUniforms(material, settings) {
   syncGridDerivedSettings(settings);
@@ -149,7 +150,7 @@ export function createGridRevealMaterial(startAngle = 0) {
           if (phase >= uDashLength * uDashRatio) discard;
         }
 
-        float alpha = mix(uOpacity * 0.45, uOpacity, solidMix) * uRevealOpacity * lineAlpha;
+        float alpha = mix(${GRID_REVEAL_DASHED_OPACITY.toFixed(1)}, uOpacity, solidMix) * uRevealOpacity * lineAlpha;
         gl_FragColor = vec4(uColor, alpha);
       }
     `,

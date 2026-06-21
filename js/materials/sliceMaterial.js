@@ -1,7 +1,8 @@
 import {
   SHAFT_RADIUS,
   SHAFT_CYL_HEIGHT,
-  SHAFT_TIP_HEIGHT
+  SHAFT_TIP_HEIGHT,
+  SOLID_BOTTOM_HEIGHT
 } from '../config/constants.js';
 
 export function createGradientSliceMaterial(centroid, maxDist, grad, opacity) {
@@ -19,7 +20,8 @@ export function createGradientSliceMaterial(centroid, maxDist, grad, opacity) {
       uRevealSoftness: { value: 0.15 },
       uShaftRadius: { value: SHAFT_RADIUS },
       uShaftCylHeight: { value: SHAFT_CYL_HEIGHT },
-      uShaftTipHeight: { value: SHAFT_TIP_HEIGHT }
+      uShaftTipHeight: { value: SHAFT_TIP_HEIGHT },
+      uShaftBaseY: { value: SOLID_BOTTOM_HEIGHT }
     },
     vertexShader: `
       varying vec3 vPos;
@@ -42,11 +44,12 @@ export function createGradientSliceMaterial(centroid, maxDist, grad, opacity) {
       uniform float uShaftRadius;
       uniform float uShaftCylHeight;
       uniform float uShaftTipHeight;
+      uniform float uShaftBaseY;
       varying vec3 vPos;
 
       float pillarRadiusAt(float y) {
         float shaftTop = uShaftCylHeight + uShaftTipHeight;
-        if (y < 0.0 || y > shaftTop) return 0.0;
+        if (y < uShaftBaseY || y > shaftTop) return 0.0;
         if (y <= uShaftCylHeight) return uShaftRadius;
         return uShaftRadius * (1.0 - (y - uShaftCylHeight) / uShaftTipHeight);
       }
@@ -73,7 +76,7 @@ export function createGradientSliceMaterial(centroid, maxDist, grad, opacity) {
     opacity: 1,
     side: THREE.DoubleSide,
     depthWrite: false,
-    depthTest: false,
+    depthTest: true,
     blending: THREE.NormalBlending
   });
 }

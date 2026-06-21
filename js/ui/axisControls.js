@@ -23,7 +23,6 @@ export function applyAxisMaterial() {
 
   if (state.pyramidLights.axis) {
     state.pyramidLights.axis.color.copy(baseColor);
-    state.pyramidLights.axis.intensity = state.axisSettings.lightIntensity * state.pyramidBrightness;
   }
 
   document.getElementById('axis-color-hex-label').textContent = state.axisSettings.color.toUpperCase();
