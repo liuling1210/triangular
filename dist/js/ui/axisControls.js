@@ -1,3 +1,4 @@
+import { applyAxisGradientUniforms } from '../materials/axisMaterial.js';
 import { state } from '../state/appState.js';
 
 export function getAxisEmissiveIntensity() {
@@ -15,6 +16,7 @@ function syncAxisSurfaceMaterial(mat) {
   mat.transmission = 0;
   mat.depthWrite = true;
   mat.depthTest = true;
+  applyAxisGradientUniforms(mat, state.axisSettings);
   mat.needsUpdate = true;
   return baseColor;
 }
@@ -74,6 +76,27 @@ export function applyAxisMaterial() {
   document.getElementById('axis-emissive-val').textContent = `${Math.round(state.axisSettings.emissiveIntensity * 100)}%`;
   document.getElementById('axis-clearcoat-val').textContent = `${Math.round(state.axisSettings.clearcoat * 100)}%`;
   document.getElementById('axis-light-val').textContent = `${Math.round(state.axisSettings.lightIntensity * 100)}%`;
+  syncAxisGradientLabels();
+}
+
+function syncAxisGradientLabels() {
+  const { axisSettings } = state;
+  document.getElementById('axis-gradient-strength-val').textContent =
+    `${Math.round(axisSettings.gradientStrength * 100)}%`;
+  document.getElementById('axis-gradient-end-darkness-val').textContent =
+    `${Math.round(axisSettings.gradientEndDarkness * 100)}%`;
+  document.getElementById('axis-gradient-center-val').textContent =
+    `${Math.round(axisSettings.gradientCenter * 100)}%`;
+  document.getElementById('axis-gradient-half-width-val').textContent =
+    `${Math.round(axisSettings.gradientHalfWidth * 100)}%`;
+}
+
+function applyAxisGradientSettings() {
+  const mat = state.pyramidMats.axis;
+  if (mat) {
+    applyAxisGradientUniforms(mat, state.axisSettings);
+  }
+  syncAxisGradientLabels();
 }
 
 export function setupAxisUI() {
@@ -104,5 +127,21 @@ export function setupAxisUI() {
   document.getElementById('axis-light-slider').addEventListener('input', (e) => {
     state.axisSettings.lightIntensity = parseFloat(e.target.value) / 100;
     applyAxisMaterial();
+  });
+  document.getElementById('axis-gradient-strength-slider').addEventListener('input', (e) => {
+    state.axisSettings.gradientStrength = parseFloat(e.target.value) / 100;
+    applyAxisGradientSettings();
+  });
+  document.getElementById('axis-gradient-end-darkness-slider').addEventListener('input', (e) => {
+    state.axisSettings.gradientEndDarkness = parseFloat(e.target.value) / 100;
+    applyAxisGradientSettings();
+  });
+  document.getElementById('axis-gradient-center-slider').addEventListener('input', (e) => {
+    state.axisSettings.gradientCenter = parseFloat(e.target.value) / 100;
+    applyAxisGradientSettings();
+  });
+  document.getElementById('axis-gradient-half-width-slider').addEventListener('input', (e) => {
+    state.axisSettings.gradientHalfWidth = parseFloat(e.target.value) / 100;
+    applyAxisGradientSettings();
   });
 }
