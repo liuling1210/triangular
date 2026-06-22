@@ -1,14 +1,15 @@
 import {
-  PYRAMID_EFFECT_MODES,
-  BASE_BLOOM_STRENGTH
+  PYRAMID_EFFECT_MODES
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
+import { getFullBloomStrength } from '../utils/viewAdaptation.js';
 import {
   getEdgeFlowOpacity,
   getEdgeFlowOuterIntensity,
   getEdgeFlowInnerIntensity
 } from '../ui/edgeFlowControls.js';
 import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
+import { applyAxisRevealWeight } from '../ui/axisControls.js';
 import { getFootEmissiveIntensity } from '../ui/footControls.js';
 import { getShellEmissiveIntensity, getShellOpacity } from '../ui/shellControls.js';
 
@@ -78,11 +79,7 @@ function setGlowVisualWeight(w) {
   applyPhysical(mats.solid, 1, getFootEmissiveIntensity());
   applyPhysical(mats.shell, getShellOpacity(), getShellEmissiveIntensity());
   applyPhysical(mats.base, 1, getFootEmissiveIntensity());
-  if (mats.axis) {
-    mats.axis.transparent = fading;
-    mats.axis.opacity = weight;
-    mats.axis.emissiveIntensity = state.axisSettings.emissiveIntensity * weight;
-  }
+  applyAxisRevealWeight(weight, { opacityFade: true });
 
   if (mats.planes) {
     mats.planes.forEach((mat) => {
@@ -138,7 +135,7 @@ function setWireframeVisualWeight(t) {
 
 function applyBloomForTransition(progress) {
   if (!state.bloomPass) return;
-  const fullBloom = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
+  const fullBloom = getFullBloomStrength();
   const wireBloom = fullBloom * WIREFRAME_BLOOM_RATIO;
   state.bloomPass.strength = lerp(fullBloom, wireBloom, smootherstep(progress));
 }

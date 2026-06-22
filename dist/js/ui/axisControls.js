@@ -1,29 +1,69 @@
 import { state } from '../state/appState.js';
 
-export function applyAxisMaterial() {
-  const baseColor = new THREE.Color(state.axisSettings.color);
-  const surfaceColor = baseColor.clone().multiplyScalar(state.axisSettings.colorBrightness);
-  const emissiveColor = baseColor.clone().multiplyScalar(state.axisSettings.emissiveStrength);
+export function getAxisEmissiveIntensity() {
+  return state.axisSettings.emissiveIntensity * state.pyramidBrightness;
+}
 
-  if (state.pyramidMats.axis) {
-    state.pyramidMats.axis.color.copy(surfaceColor);
-    state.pyramidMats.axis.emissive.copy(emissiveColor);
-    state.pyramidMats.axis.emissiveIntensity = state.axisSettings.emissiveIntensity * state.pyramidBrightness;
-    state.pyramidMats.axis.metalness = state.axisSettings.metalness;
-    state.pyramidMats.axis.roughness = state.axisSettings.roughness;
-    state.pyramidMats.axis.clearcoat = state.axisSettings.clearcoat;
-    state.pyramidMats.axis.clearcoatRoughness = state.axisSettings.clearcoatRoughness;
-    state.pyramidMats.axis.transparent = false;
-    state.pyramidMats.axis.opacity = 1;
-    state.pyramidMats.axis.transmission = 0;
-    state.pyramidMats.axis.depthWrite = true;
-    state.pyramidMats.axis.depthTest = true;
-    state.pyramidMats.axis.needsUpdate = true;
+function syncAxisSurfaceMaterial(mat) {
+  const baseColor = new THREE.Color(state.axisSettings.color);
+  mat.color.copy(baseColor.clone().multiplyScalar(state.axisSettings.colorBrightness));
+  mat.emissive.copy(baseColor.clone().multiplyScalar(state.axisSettings.emissiveStrength));
+  mat.metalness = state.axisSettings.metalness;
+  mat.roughness = state.axisSettings.roughness;
+  mat.clearcoat = state.axisSettings.clearcoat;
+  mat.clearcoatRoughness = state.axisSettings.clearcoatRoughness;
+  mat.transmission = 0;
+  mat.depthWrite = true;
+  mat.depthTest = true;
+  mat.needsUpdate = true;
+  return baseColor;
+}
+
+/**
+ * 动画渐显：表面参数与正式材质始终一致。
+ * 默认不透明（opacityFade: false），由 scale / visible 控制出现；仅 wireframe 切换等需要时才做 opacity 淡出。
+ */
+export function applyAxisRevealWeight(revealWeight, { opacityFade = false } = {}) {
+  const mat = state.pyramidMats.axis;
+  if (!mat) return;
+
+  const w = Math.max(0, Math.min(1, revealWeight));
+
+  if (w <= 0) {
+    syncAxisSurfaceMaterial(mat);
+    mat.transparent = true;
+    mat.opacity = 0;
+    mat.emissiveIntensity = 0;
+    return;
+  }
+
+  syncAxisSurfaceMaterial(mat);
+  mat.emissiveIntensity = getAxisEmissiveIntensity();
+
+  if (opacityFade && w < 1) {
+    mat.transparent = true;
+    mat.opacity = w;
+  } else {
+    mat.transparent = false;
+    mat.opacity = 1;
+  }
+}
+
+export function applyAxisMaterial() {
+  const mat = state.pyramidMats.axis;
+  const baseColor = mat ? syncAxisSurfaceMaterial(mat) : new THREE.Color(state.axisSettings.color);
+
+  if (mat) {
+    mat.transparent = false;
+    mat.opacity = 1;
+    mat.emissiveIntensity = getAxisEmissiveIntensity();
   }
 
   if (state.pyramidLights.axis) {
     state.pyramidLights.axis.color.copy(baseColor);
-    state.pyramidLights.axis.intensity = state.axisSettings.lightIntensity * state.pyramidBrightness;
+  }
+  if (state.pyramidLights.axisSoft) {
+    state.pyramidLights.axisSoft.color.copy(baseColor);
   }
 
   document.getElementById('axis-color-hex-label').textContent = state.axisSettings.color.toUpperCase();

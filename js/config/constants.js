@@ -19,7 +19,7 @@ export const SHOW_LABELS = false;
 export const DEFAULT_BRIGHTNESS = 0.74;
 
 export const STRATEGIC_LABEL_ITEMS = [
-  { key: 'base', text: '以价值三角为基', position: { x: 49.1, y: 76.6 } },
+  { key: 'base', text: '以价值三角为基', position: { x: 50.2, y: 76.6 } },
   { key: 'axis', text: '以战略中轴为路', position: { x: 36.2, y: 39.4 } },
   { key: 'slices', text: '以战略课题为门', position: { x: 65.6, y: 46.8 } },
   { key: 'apex', text: '战略目标', position: { x: 49.1, y: 11.9 } }
@@ -46,7 +46,7 @@ export const STRATEGIC_LABEL_SCREEN_RANGE = {
   y: { min: 0, max: 100 }
 };
 
-export const DEFAULT_STRATEGIC_LABEL_FONT_SIZE = 26;
+export const DEFAULT_STRATEGIC_LABEL_FONT_SIZE = 17;
 export const STRATEGIC_LABEL_FONT_SIZE_RANGE = { min: 10, max: 40 };
 
 export const DEFAULT_SLICE_GRADIENTS = [
@@ -68,17 +68,17 @@ export const DEFAULT_AXIS_SETTINGS = {
 
 /** 三棱锥上半段玻璃外壳（shell）材质参数 */
 export const DEFAULT_SHELL_SETTINGS = {
-  color: '#C6DFEB',
+  color: '#B6E5FB',
   colorBrightness: 0.83,
   emissiveStrength: 0.1,
-  emissiveIntensity: 1.6,
-  opacity: 0.95,
-  transmission: 0.43,
-  thickness: 2.03,
-  roughness: 0.11,
-  metalness: 0.56,
-  clearcoat: 0,
-  clearcoatRoughness: 1
+  emissiveIntensity: 1.49,
+  opacity: 0.7,
+  transmission: 0.12,
+  thickness: 2.19,
+  roughness: 0.19,
+  metalness: 0.54,
+  clearcoat: 0.77,
+  clearcoatRoughness: 0.18
 };
 
 /** 底部实心段（solid）与底面盖板（base）共用材质参数 */
@@ -131,22 +131,22 @@ export const BASE_LIGHT_INTENSITIES = { key: 1.2, core: 2.5, axis: 2.8 };
 
 /** 发光模式场景灯光与后处理参数（左侧面板可调） */
 export const DEFAULT_GLOW_LIGHT_SETTINGS = {
-  ambientIntensity: 1.08,
-  keyIntensity: 1.31,
-  fillIntensity: 0.47,
-  coreIntensity: 2.54,
+  ambientIntensity: 1,
+  keyIntensity: 1.3,
+  fillIntensity: 0.84,
+  coreIntensity: 3.38,
   ambientSoftness: 0.35,
   keySoftness: 0.25,
   fillSoftness: 0.45,
   coreSoftness: 0.4,
   axisSoftness: 0.35,
-  bloomStrength: 0.28,
-  bloomThreshold: 0.27,
+  bloomStrength: 0.39,
+  bloomThreshold: 0.04,
   bloomRadius: 0.27,
   toneExposure: 1.18,
-  keyPosition: { x: -6.74, y: 12.11, z: 1.72 },
-  fillPosition: { x: 0.64, y: 3.92, z: 1.43 },
-  corePosition: { x: -5.56, y: 0.97, z: 0 },
+  keyPosition: { x: -4.87, y: 3.26, z: -3 },
+  fillPosition: { x: -0.25, y: 7.39, z: 2.11 },
+  corePosition: { x: 0, y: 1.03, z: 0 },
   axisLightPosition: { x: 0, y: 1.65, z: 0 }
 };
 

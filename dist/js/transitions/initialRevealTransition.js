@@ -1,11 +1,11 @@
 import {
-  BASE_BLOOM_STRENGTH,
-  DEFAULT_PYRAMID_COLOR
+  REVEAL_CONTOUR_LINE_COLOR,
+  REVEAL_CONTOUR_LINE_WIDTH
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import { applyPyramidColorAndBrightness } from '../ui/pyramidControls.js';
-import { applyAxisMaterial } from '../ui/axisControls.js';
-import { getFootEmissiveIntensity } from '../ui/footControls.js';
+import { applyAxisMaterial, applyAxisRevealWeight } from '../ui/axisControls.js';
+import { getFootEmissiveIntensityForReveal } from '../utils/viewAdaptation.js';
 import { getShellEmissiveIntensity, getShellOpacity } from '../ui/shellControls.js';
 import {
   getEdgeFlowOpacity,
@@ -37,6 +37,7 @@ const CONTOUR_VERTEX_PATH = [[0, 2], [2, 1], [1, 0]];
 const LINE_SAMPLE_COUNT = 72;
 const REVEAL_LINE_OPACITY = 0.98;
 const SETTLE_DURATION = 0.5;
+const CONTOUR_SEGMENT_AXIS = new THREE.Vector3(0, 0, 1);
 
 const CONTOUR_SEGMENT_DURATION = 0.58;
 const CONTOUR_SEGMENT_OVERLAP = 0.1;
@@ -146,35 +147,59 @@ export function getContourEndTime() {
   return contourEndTime();
 }
 
-function createProgressiveLine(start, end, material) {
-  const points = [];
-  for (let i = 0; i <= LINE_SAMPLE_COUNT; i++) {
-    const t = i / LINE_SAMPLE_COUNT;
-    points.push(
-      new THREE.Vector3(
-        lerp(start.x, end.x, t),
-        lerp(start.y, end.y, t),
-        lerp(start.z, end.z, t)
-      )
+function createContourSegmentMesh(start, end, lineWidth, material) {
+  const dir = new THREE.Vector3().subVectors(end, start);
+  const length = dir.length();
+  if (length < 1e-6) return null;
+
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(lineWidth, lineWidth * 0.25, length),
+    material
+  );
+  mesh.position.copy(start).add(end).multiplyScalar(0.5);
+  mesh.quaternion.setFromUnitVectors(CONTOUR_SEGMENT_AXIS, dir.normalize());
+  mesh.frustumCulled = false;
+  mesh.renderOrder = 12;
+  return mesh;
+}
+
+function createProgressiveContourSegment(start, end, material, lineWidth) {
+  const chunks = [];
+  const segmentGroup = new THREE.Group();
+
+  for (let i = 0; i < LINE_SAMPLE_COUNT; i++) {
+    const t0 = i / LINE_SAMPLE_COUNT;
+    const t1 = (i + 1) / LINE_SAMPLE_COUNT;
+    const p0 = new THREE.Vector3(
+      lerp(start.x, end.x, t0),
+      lerp(start.y, end.y, t0),
+      lerp(start.z, end.z, t0)
     );
+    const p1 = new THREE.Vector3(
+      lerp(start.x, end.x, t1),
+      lerp(start.y, end.y, t1),
+      lerp(start.z, end.z, t1)
+    );
+    const mesh = createContourSegmentMesh(p0, p1, lineWidth, material);
+    if (!mesh) continue;
+    mesh.visible = false;
+    segmentGroup.add(mesh);
+    chunks.push(mesh);
   }
-  const geo = new THREE.BufferGeometry().setFromPoints(points);
-  geo.setDrawRange(0, 0);
-  const line = new THREE.Line(geo, material);
-  line.frustumCulled = false;
-  line.renderOrder = 12;
-  return { line, geo, maxCount: points.length };
+
+  return { group: segmentGroup, chunks, maxCount: chunks.length };
 }
 
 function setLineProgress(segment, progress) {
-  const count = Math.max(2, Math.floor(progress * (segment.maxCount - 1)) + 1);
-  segment.geo.setDrawRange(0, count);
+  const count = Math.max(1, Math.floor(progress * segment.maxCount));
+  segment.chunks.forEach((mesh, index) => {
+    mesh.visible = index < count;
+  });
 }
 
 function createRevealLineMaterial() {
-  const color = new THREE.Color(state.pyramidColorHex || DEFAULT_PYRAMID_COLOR);
-  return new THREE.LineBasicMaterial({
-    color,
+  return new THREE.MeshBasicMaterial({
+    color: REVEAL_CONTOUR_LINE_COLOR,
     transparent: true,
     opacity: 0,
     blending: THREE.AdditiveBlending,
@@ -187,8 +212,13 @@ function buildContourLines(baseVerts) {
   const lineMaterial = createRevealLineMaterial();
   const group = new THREE.Group();
   const segments = CONTOUR_VERTEX_PATH.map(([fromIdx, toIdx]) => {
-    const segment = createProgressiveLine(baseVerts[fromIdx], baseVerts[toIdx], lineMaterial);
-    group.add(segment.line);
+    const segment = createProgressiveContourSegment(
+      baseVerts[fromIdx],
+      baseVerts[toIdx],
+      lineMaterial,
+      REVEAL_CONTOUR_LINE_WIDTH
+    );
+    group.add(segment.group);
     return segment;
   });
   return { group, segments, lineMaterial };
@@ -233,8 +263,7 @@ function hidePyramidContent() {
     mats.shell.emissiveIntensity = 0;
   }
   if (mats.axis) {
-    mats.axis.opacity = 0;
-    mats.axis.emissiveIntensity = 0;
+    applyAxisRevealWeight(0);
   }
   mats.planes?.forEach((mat) => {
     mat.uniforms.uIntensity.value = 0;
@@ -326,11 +355,16 @@ function updateBaseLines(elapsed, reveal) {
   }
 
   const baseStart = reveal.baseSolidStartTime;
-  const lineFade = baseStart == null
-    ? 0
-    : softReveal(clamp01((elapsed - baseStart) / BASE_SOLID_DURATION));
+  let lineFadeOut = 0;
+  if (baseStart != null) {
+    const t = clamp01((elapsed - baseStart) / BASE_SOLID_DURATION);
+    lineFadeOut = softReveal(t);
+  }
   const lineIn = smootherstep(clamp01(elapsed / 0.18));
-  reveal.lineMaterial.opacity = REVEAL_LINE_OPACITY * lineIn * (1 - lineFade * 0.82);
+  reveal.lineMaterial.opacity = REVEAL_LINE_OPACITY * lineIn * (1 - lineFadeOut);
+  if (reveal.group) {
+    reveal.group.visible = lineFadeOut < 0.999;
+  }
 }
 
 function updateBaseSolid(elapsed, reveal) {
@@ -350,8 +384,8 @@ function updateBaseSolid(elapsed, reveal) {
   if (bottomCap) bottomCap.visible = baseW > 0.008;
   if (topCap) topCap.visible = baseW > 0.008;
   if (bottomMesh) bottomMesh.visible = solidW > 0.008;
-  applyPhysicalRevealSoft(mats.base, 1, getFootEmissiveIntensity(), baseW);
-  applyPhysicalRevealSoft(mats.solid, 1, getFootEmissiveIntensity(), solidW);
+  applyPhysicalRevealSoft(mats.base, 1, getFootEmissiveIntensityForReveal(), baseW);
+  applyPhysicalRevealSoft(mats.solid, 1, getFootEmissiveIntensityForReveal(), solidW);
 }
 
 function updateShellEdges(elapsed, timeline) {
@@ -384,10 +418,9 @@ function updateShellEdges(elapsed, timeline) {
 function updateAxis(elapsed, timeline) {
   const w = phaseT(elapsed, timeline.axis);
   const objects = state.glowObjects;
-  const mats = state.pyramidMats;
   const axisShaft = objects.axisShaft;
 
-  if (!axisShaft || !mats.axis) return;
+  if (!axisShaft || !state.pyramidMats.axis) return;
 
   axisShaft.visible = w > 0.01;
   axisShaft.scale.y = Math.max(w, 0.001);
@@ -397,10 +430,11 @@ function updateAxis(elapsed, timeline) {
   if (cylMesh) cylMesh.visible = w > 0.01;
   if (tipMesh) tipMesh.visible = w > 0.01;
 
-  const emissiveBump = w > 0.82 ? lerp(1, 1.06, smootherstep((w - 0.82) / 0.18)) : w / 0.82;
-  mats.axis.transparent = w < 0.999;
-  mats.axis.opacity = w;
-  mats.axis.emissiveIntensity = state.axisSettings.emissiveIntensity * w * emissiveBump;
+  if (w > 0.01 && state.initialReveal) {
+    state.initialReveal.pastAxisPhase = true;
+  }
+
+  applyAxisRevealWeight(w > 0.01 ? 1 : 0, { opacityFade: false });
 }
 
 function updateSliceLayer(elapsed, sliceIndex, timeline) {
@@ -463,12 +497,6 @@ function updateParticles(elapsed, timeline) {
   }
 }
 
-function updateBloom(elapsed, timeline) {
-  if (!state.bloomPass) return;
-  const full = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
-  const bloomT = smootherstep(clamp01(elapsed / timeline.particles.start));
-  state.bloomPass.strength = lerp(full * 0.65, full, bloomT);
-}
 
 function resetRevealState() {
   const objects = state.glowObjects;
@@ -492,7 +520,9 @@ function finishInitialReveal(reveal) {
     reveal.group.parent.remove(reveal.group);
   }
   reveal.lineMaterial.dispose();
-  reveal.segments.forEach((segment) => segment.geo.dispose());
+  reveal.segments.forEach((segment) => {
+    segment.chunks.forEach((mesh) => mesh.geometry.dispose());
+  });
 
   resetRevealState();
   finishGridReveal();
@@ -505,10 +535,6 @@ function finishInitialReveal(reveal) {
     marker.element.style.opacity = state.showCornerMarkers ? '1' : '0';
   });
   showAllStrategicLabels();
-
-  if (state.bloomPass) {
-    state.bloomPass.strength = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
-  }
 
   state.initialReveal = null;
 }
@@ -529,10 +555,6 @@ export function startInitialReveal() {
   reveal.duration = getTotalDuration();
   reveal.autoRotateStarted = false;
   state.initialReveal = reveal;
-
-  if (state.bloomPass) {
-    state.bloomPass.strength = BASE_BLOOM_STRENGTH * state.pyramidBrightness * 0.65;
-  }
 }
 
 function updateInitialRevealCamera(elapsed, reveal, timeline) {
@@ -577,10 +599,7 @@ export function updateInitialReveal() {
       maybeStartAutoRotateAfterSlices(elapsed, timeline, reveal);
       updateParticles(elapsed, timeline);
     }
-    updateBloom(elapsed, timeline);
     updateStrategicLabelReveal(elapsed, timeline, reveal);
-  } else {
-    updateBloom(elapsed, { particles: { start: getTotalDuration() } });
   }
 
   if (elapsed >= reveal.duration) {

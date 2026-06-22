@@ -12,11 +12,14 @@ export const FRONT_VIEW_CAMERA = {
 };
 
 export const DEFAULT_PYRAMID_COLOR = '#907647';
+/** 初始俯视底面轮廓描边 */
+export const REVEAL_CONTOUR_LINE_COLOR = '#AD834E';
+export const REVEAL_CONTOUR_LINE_WIDTH = 0.010;
 export const SHOW_LABELS = false;
 export const DEFAULT_BRIGHTNESS = 0.74;
 
 export const STRATEGIC_LABEL_ITEMS = [
-  { key: 'base', text: '以价值三角为基', position: { x: 49.1, y: 76.6 } },
+  { key: 'base', text: '以价值三角为基', position: { x: 50.2, y: 76.6 } },
   { key: 'axis', text: '以战略中轴为路', position: { x: 36.2, y: 39.4 } },
   { key: 'slices', text: '以战略课题为门', position: { x: 65.6, y: 46.8 } },
   { key: 'apex', text: '战略目标', position: { x: 49.1, y: 11.9 } }
@@ -43,16 +46,16 @@ export const STRATEGIC_LABEL_SCREEN_RANGE = {
   y: { min: 0, max: 100 }
 };
 
-export const DEFAULT_STRATEGIC_LABEL_FONT_SIZE = 26;
+export const DEFAULT_STRATEGIC_LABEL_FONT_SIZE = 17;
 export const STRATEGIC_LABEL_FONT_SIZE_RANGE = { min: 10, max: 40 };
 
 export const DEFAULT_SLICE_GRADIENTS = [
-  { start: '#1C1C1C', end: '#706129' },
-  { start: '#1C1C1C', end: '#706129' }
+  { start: '#1C1C1C', end: '#D6B884' },
+  { start: '#1C1C1C', end: '#D3BB92' }
 ];
 
 export const DEFAULT_AXIS_SETTINGS = {
-  color: '#B6AE58',
+  color: '#AA937A',
   colorBrightness: 1.75,
   emissiveStrength: 0.95,
   emissiveIntensity: 0.44,
@@ -65,22 +68,22 @@ export const DEFAULT_AXIS_SETTINGS = {
 
 /** 三棱锥上半段玻璃外壳（shell）材质参数 */
 export const DEFAULT_SHELL_SETTINGS = {
-  color: '#FFFFFF',
-  colorBrightness: 0.74,
+  color: '#B6E5FB',
+  colorBrightness: 0.83,
   emissiveStrength: 0.1,
-  emissiveIntensity: 0.2,
-  opacity: 0.64,
-  transmission: 0.4,
-  thickness: 1.56,
-  roughness: 0.3,
-  metalness: 0.1,
-  clearcoat: 0.7,
-  clearcoatRoughness: 0.12
+  emissiveIntensity: 1.49,
+  opacity: 0.7,
+  transmission: 0.12,
+  thickness: 2.19,
+  roughness: 0.19,
+  metalness: 0.54,
+  clearcoat: 0.77,
+  clearcoatRoughness: 0.18
 };
 
 /** 底部实心段（solid）与底面盖板（base）共用材质参数 */
 export const DEFAULT_FOOT_SETTINGS = {
-  color: '#A18145',
+  color: '#B3966E',
   colorBrightness: 1,
   emissiveStrength: 0.25,
   emissiveIntensity: 0.57,
@@ -89,6 +92,32 @@ export const DEFAULT_FOOT_SETTINGS = {
   clearcoat: 0.8,
   clearcoatRoughness: 0.1
 };
+
+/** 俯视时压低底面镜面高光与自发光，避免中心灯圈 / 整面过曝 */
+export const TOP_DOWN_FOOT_OVERRIDES = {
+  metalness: 0.1,
+  roughness: 0.72,
+  clearcoat: 0,
+  clearcoatRoughness: 0.2,
+  colorBrightness: 0.88,
+  emissiveIntensity: 0.15
+};
+
+export const TOP_DOWN_LIGHT_SCALES = {
+  core: 0.12,
+  key: 0.6,
+  ambient: 0.8,
+  axis: 0
+};
+
+export const TOP_DOWN_BLOOM = {
+  strengthScale: 0.55,
+  threshold: 0.5
+};
+
+export const BASE_AMBIENT_INTENSITY = 0.6;
+export const BLOOM_THRESHOLD = 0.15;
+export const BLOOM_RADIUS = 0.45;
 
 export const DEFAULT_SLICE_OPACITY = {
   opacityCenter: 0.34,
@@ -99,6 +128,37 @@ export const DEFAULT_SLICE_OPACITY = {
 export const BASE_TONE_EXPOSURE = 1.2;
 export const BASE_BLOOM_STRENGTH = 0.85;
 export const BASE_LIGHT_INTENSITIES = { key: 1.2, core: 2.5, axis: 2.8 };
+
+/** 发光模式场景灯光与后处理参数（左侧面板可调） */
+export const DEFAULT_GLOW_LIGHT_SETTINGS = {
+  ambientIntensity: 1,
+  keyIntensity: 1.3,
+  fillIntensity: 0.84,
+  coreIntensity: 3.38,
+  ambientSoftness: 0.35,
+  keySoftness: 0.25,
+  fillSoftness: 0.45,
+  coreSoftness: 0.4,
+  axisSoftness: 0.35,
+  bloomStrength: 0.39,
+  bloomThreshold: 0.04,
+  bloomRadius: 0.27,
+  toneExposure: 1.18,
+  keyPosition: { x: -4.87, y: 3.26, z: -3 },
+  fillPosition: { x: -0.25, y: 7.39, z: 2.11 },
+  corePosition: { x: 0, y: 1.03, z: 0 },
+  axisLightPosition: { x: 0, y: 1.65, z: 0 }
+};
+
+export function cloneGlowLightSettings(source = DEFAULT_GLOW_LIGHT_SETTINGS) {
+  return {
+    ...source,
+    keyPosition: { ...source.keyPosition },
+    fillPosition: { ...source.fillPosition },
+    corePosition: { ...source.corePosition },
+    axisLightPosition: { ...source.axisLightPosition }
+  };
+}
 export const BASE_EMISSIVE = { solid: 0.55, base: 0.6, shell: 0.2, axis: 1.6 };
 
 export const RENDER_ORDER = {
@@ -114,7 +174,7 @@ export const RENDER_ORDER = {
 };
 
 export const EDGE_FLOW = {
-  outerRadius: 0.024,
+  outerRadius: 0.011,
   innerRadius: 0.005,
   tubularSegments: 96,
   radialSegments: 8,

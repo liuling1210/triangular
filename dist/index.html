@@ -47,6 +47,202 @@
       </div>
     </section>
 
+    <section class="panel-section" data-section="glow-light">
+      <button type="button" class="panel-section-header" aria-expanded="false">
+        <span class="panel-section-title">发光灯光</span>
+        <span class="panel-section-chevron" aria-hidden="true"></span>
+      </button>
+      <div class="panel-section-body">
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>环境光</span>
+            <span id="glow-light-ambient-val">100%</span>
+          </div>
+          <input id="glow-light-ambient-slider" class="panel-slider" type="range" min="0" max="200" value="100">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>环境光柔和</span>
+            <span id="glow-light-ambient-soft-val">35%</span>
+          </div>
+          <input id="glow-light-ambient-soft-slider" class="panel-slider" type="range" min="0" max="100" value="35">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>主光源</span>
+            <span id="glow-light-key-val">130%</span>
+          </div>
+          <input id="glow-light-key-slider" class="panel-slider" type="range" min="0" max="400" value="130">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>主光源柔和</span>
+            <span id="glow-light-key-soft-val">25%</span>
+          </div>
+          <input id="glow-light-key-soft-slider" class="panel-slider" type="range" min="0" max="100" value="25">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>补光</span>
+            <span id="glow-light-fill-val">84%</span>
+          </div>
+          <input id="glow-light-fill-slider" class="panel-slider" type="range" min="0" max="200" value="84">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>补光柔和</span>
+            <span id="glow-light-fill-soft-val">45%</span>
+          </div>
+          <input id="glow-light-fill-soft-slider" class="panel-slider" type="range" min="0" max="100" value="45">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>锥心点光</span>
+            <span id="glow-light-core-val">338%</span>
+          </div>
+          <input id="glow-light-core-slider" class="panel-slider" type="range" min="0" max="500" value="338">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>锥心点光柔和</span>
+            <span id="glow-light-core-soft-val">40%</span>
+          </div>
+          <input id="glow-light-core-soft-slider" class="panel-slider" type="range" min="0" max="100" value="40">
+        </div>
+        <div class="slice-section">
+          <div class="slice-title">主光源位置</div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>X</span>
+              <span id="glow-light-key-x-val">-4.87</span>
+            </div>
+            <input id="glow-light-key-x-slider" class="panel-slider" type="range" min="-1500" max="1500" value="-487">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>Y</span>
+              <span id="glow-light-key-y-val">3.26</span>
+            </div>
+            <input id="glow-light-key-y-slider" class="panel-slider" type="range" min="-500" max="1500" value="326">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>Z</span>
+              <span id="glow-light-key-z-val">-3.00</span>
+            </div>
+            <input id="glow-light-key-z-slider" class="panel-slider" type="range" min="-1500" max="1500" value="-300">
+          </div>
+        </div>
+        <div class="slice-section">
+          <div class="slice-title">补光位置</div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>X</span>
+              <span id="glow-light-fill-x-val">-0.25</span>
+            </div>
+            <input id="glow-light-fill-x-slider" class="panel-slider" type="range" min="-1500" max="1500" value="-25">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>Y</span>
+              <span id="glow-light-fill-y-val">7.39</span>
+            </div>
+            <input id="glow-light-fill-y-slider" class="panel-slider" type="range" min="-500" max="1500" value="739">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>Z</span>
+              <span id="glow-light-fill-z-val">2.11</span>
+            </div>
+            <input id="glow-light-fill-z-slider" class="panel-slider" type="range" min="-1500" max="1500" value="211">
+          </div>
+        </div>
+        <div class="slice-section">
+          <div class="slice-title">锥心点光位置</div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>X</span>
+              <span id="glow-light-core-x-val">0.00</span>
+            </div>
+            <input id="glow-light-core-x-slider" class="panel-slider" type="range" min="-1500" max="1500" value="0">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>Y</span>
+              <span id="glow-light-core-y-val">1.03</span>
+            </div>
+            <input id="glow-light-core-y-slider" class="panel-slider" type="range" min="-500" max="1500" value="103">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>Z</span>
+              <span id="glow-light-core-z-val">0.00</span>
+            </div>
+            <input id="glow-light-core-z-slider" class="panel-slider" type="range" min="-1500" max="1500" value="0">
+          </div>
+        </div>
+        <div class="slice-section">
+          <div class="slice-title">中轴点光位置</div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>X</span>
+              <span id="glow-light-axis-x-val">0.00</span>
+            </div>
+            <input id="glow-light-axis-x-slider" class="panel-slider" type="range" min="-1500" max="1500" value="0">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>Y</span>
+              <span id="glow-light-axis-y-val">1.65</span>
+            </div>
+            <input id="glow-light-axis-y-slider" class="panel-slider" type="range" min="-500" max="1500" value="165">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-label">
+              <span>Z</span>
+              <span id="glow-light-axis-z-val">0.00</span>
+            </div>
+            <input id="glow-light-axis-z-slider" class="panel-slider" type="range" min="-1500" max="1500" value="0">
+          </div>
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>中轴点光柔和</span>
+            <span id="glow-light-axis-soft-val">35%</span>
+          </div>
+          <input id="glow-light-axis-soft-slider" class="panel-slider" type="range" min="0" max="100" value="35">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>辉光强度</span>
+            <span id="glow-light-bloom-strength-val">39%</span>
+          </div>
+          <input id="glow-light-bloom-strength-slider" class="panel-slider" type="range" min="0" max="200" value="39">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>辉光阈值</span>
+            <span id="glow-light-bloom-threshold-val">4%</span>
+          </div>
+          <input id="glow-light-bloom-threshold-slider" class="panel-slider" type="range" min="0" max="100" value="4">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>辉光扩散</span>
+            <span id="glow-light-bloom-radius-val">27%</span>
+          </div>
+          <input id="glow-light-bloom-radius-slider" class="panel-slider" type="range" min="0" max="100" value="27">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            <span>曝光</span>
+            <span id="glow-light-exposure-val">118%</span>
+          </div>
+          <input id="glow-light-exposure-slider" class="panel-slider" type="range" min="50" max="250" value="118">
+        </div>
+      </div>
+    </section>
+
     <section class="panel-section" data-section="shell">
       <button type="button" class="panel-section-header" aria-expanded="false">
         <span class="panel-section-title">玻璃外壳</span>
@@ -56,75 +252,75 @@
         <div class="ctrl-row">
           <div class="ctrl-label">
             <span>外壳颜色</span>
-            <span id="shell-color-hex-label">#FFFFFF</span>
+            <span id="shell-color-hex-label">#B6E5FB</span>
           </div>
           <div class="color-row">
-            <input id="shell-color-picker" type="color" value="#FFFFFF">
-            <div id="shell-color-preview" style="background: #FFFFFF"></div>
+            <input id="shell-color-picker" type="color" value="#B6E5FB">
+            <div id="shell-color-preview" style="background: #B6E5FB"></div>
           </div>
         </div>
         <div class="ctrl-row">
           <div class="ctrl-label">
             <span>颜色亮度</span>
-            <span id="shell-color-brightness-val">74%</span>
+            <span id="shell-color-brightness-val">83%</span>
           </div>
-          <input id="shell-color-brightness-slider" class="panel-slider" type="range" min="10" max="150" value="74">
+          <input id="shell-color-brightness-slider" class="panel-slider" type="range" min="10" max="150" value="83">
         </div>
         <div class="ctrl-row">
           <div class="ctrl-label">
             <span>透明度</span>
-            <span id="shell-opacity-val">64%</span>
+            <span id="shell-opacity-val">70%</span>
           </div>
-          <input id="shell-opacity-slider" class="panel-slider" type="range" min="0" max="100" value="64">
+          <input id="shell-opacity-slider" class="panel-slider" type="range" min="0" max="100" value="70">
         </div>
         <div class="ctrl-row">
           <div class="ctrl-label">
             <span>透光率</span>
-            <span id="shell-transmission-val">40%</span>
+            <span id="shell-transmission-val">12%</span>
           </div>
-          <input id="shell-transmission-slider" class="panel-slider" type="range" min="0" max="100" value="40">
+          <input id="shell-transmission-slider" class="panel-slider" type="range" min="0" max="100" value="12">
         </div>
         <div class="ctrl-row">
           <div class="ctrl-label">
             <span>玻璃厚度</span>
-            <span id="shell-thickness-val">1.56</span>
+            <span id="shell-thickness-val">2.19</span>
           </div>
-          <input id="shell-thickness-slider" class="panel-slider" type="range" min="10" max="500" value="156">
+          <input id="shell-thickness-slider" class="panel-slider" type="range" min="10" max="500" value="219">
         </div>
         <div class="ctrl-row">
           <div class="ctrl-label">
             <span>粗糙度</span>
-            <span id="shell-roughness-val">30%</span>
+            <span id="shell-roughness-val">19%</span>
           </div>
-          <input id="shell-roughness-slider" class="panel-slider" type="range" min="0" max="100" value="30">
+          <input id="shell-roughness-slider" class="panel-slider" type="range" min="0" max="100" value="19">
         </div>
         <div class="ctrl-row">
           <div class="ctrl-label">
             <span>金属度</span>
-            <span id="shell-metalness-val">10%</span>
+            <span id="shell-metalness-val">54%</span>
           </div>
-          <input id="shell-metalness-slider" class="panel-slider" type="range" min="0" max="100" value="10">
+          <input id="shell-metalness-slider" class="panel-slider" type="range" min="0" max="100" value="54">
         </div>
         <div class="ctrl-row">
           <div class="ctrl-label">
             <span>自发光强度</span>
-            <span id="shell-emissive-val">20%</span>
+            <span id="shell-emissive-val">149%</span>
           </div>
-          <input id="shell-emissive-slider" class="panel-slider" type="range" min="0" max="300" value="20">
+          <input id="shell-emissive-slider" class="panel-slider" type="range" min="0" max="300" value="149">
         </div>
         <div class="ctrl-row">
           <div class="ctrl-label">
             <span>清漆层</span>
-            <span id="shell-clearcoat-val">70%</span>
+            <span id="shell-clearcoat-val">77%</span>
           </div>
-          <input id="shell-clearcoat-slider" class="panel-slider" type="range" min="0" max="100" value="70">
+          <input id="shell-clearcoat-slider" class="panel-slider" type="range" min="0" max="100" value="77">
         </div>
         <div class="ctrl-row">
           <div class="ctrl-label">
             <span>清漆粗糙度</span>
-            <span id="shell-clearcoat-roughness-val">12%</span>
+            <span id="shell-clearcoat-roughness-val">18%</span>
           </div>
-          <input id="shell-clearcoat-roughness-slider" class="panel-slider" type="range" min="0" max="100" value="12">
+          <input id="shell-clearcoat-roughness-slider" class="panel-slider" type="range" min="0" max="100" value="18">
         </div>
       </div>
     </section>
@@ -138,11 +334,11 @@
         <div class="ctrl-row">
           <div class="ctrl-label">
             <span>金属颜色</span>
-            <span id="foot-color-hex-label">#A18145</span>
+            <span id="foot-color-hex-label">#B3966E</span>
           </div>
           <div class="color-row">
-            <input id="foot-color-picker" type="color" value="#A18145">
-            <div id="foot-color-preview" style="background: #A18145"></div>
+            <input id="foot-color-picker" type="color" value="#B3966E">
+            <div id="foot-color-preview" style="background: #B3966E"></div>
           </div>
         </div>
         <div class="ctrl-row">
@@ -220,9 +416,9 @@
         <div class="ctrl-row">
           <div class="ctrl-label">
             <span>外层管宽</span>
-            <span id="edge-flow-outer-radius-val">0.024</span>
+            <span id="edge-flow-outer-radius-val">0.011</span>
           </div>
-          <input id="edge-flow-outer-radius-slider" class="panel-slider" type="range" min="10" max="80" value="24">
+          <input id="edge-flow-outer-radius-slider" class="panel-slider" type="range" min="10" max="80" value="11">
         </div>
         <div class="ctrl-row">
           <div class="ctrl-label">
@@ -317,7 +513,7 @@
         <div class="ctrl-row strategic-label-global">
           <div class="ctrl-label">
             <span>文字大小</span>
-            <span id="strategic-label-font-size-val">26px</span>
+            <span id="strategic-label-font-size-val">17px</span>
           </div>
           <input
             id="strategic-label-font-size-slider"
@@ -325,7 +521,7 @@
             type="range"
             min="10"
             max="40"
-            value="26"
+            value="17"
           >
         </div>
         <div class="slice-section" data-label="base">
@@ -333,9 +529,9 @@
           <div class="ctrl-row">
             <div class="ctrl-label">
               <span>水平位置</span>
-              <span id="strategic-label-base-x-val">49.1%</span>
+              <span id="strategic-label-base-x-val">50.2%</span>
             </div>
-            <input id="strategic-label-base-x-slider" class="panel-slider" type="range" min="0" max="1000" value="491">
+            <input id="strategic-label-base-x-slider" class="panel-slider" type="range" min="0" max="1000" value="502">
           </div>
           <div class="ctrl-row">
             <div class="ctrl-label">
@@ -429,11 +625,11 @@
         <div class="ctrl-row">
           <div class="ctrl-label">
             <span>柱子颜色</span>
-            <span id="axis-color-hex-label">#B6AE58</span>
+            <span id="axis-color-hex-label">#AA937A</span>
           </div>
           <div class="color-row">
-            <input id="axis-color-picker" type="color" value="#B6AE58">
-            <div id="axis-color-preview" style="background: #B6AE58"></div>
+            <input id="axis-color-picker" type="color" value="#AA937A">
+            <div id="axis-color-preview" style="background: #AA937A"></div>
           </div>
         </div>
         <div class="ctrl-row">
@@ -521,8 +717,8 @@
           </div>
           <div class="gradient-row">
             <label>边缘</label>
-            <input class="slice-color-picker" type="color" data-slice="0" data-role="end" value="#706129">
-            <span class="slice-color-hex" data-slice="0" data-role="end">#706129</span>
+            <input class="slice-color-picker" type="color" data-slice="0" data-role="end" value="#D6B884">
+            <span class="slice-color-hex" data-slice="0" data-role="end">#D6B884</span>
           </div>
         </div>
         <div class="slice-section" data-slice="1">
@@ -535,8 +731,8 @@
           </div>
           <div class="gradient-row">
             <label>边缘</label>
-            <input class="slice-color-picker" type="color" data-slice="1" data-role="end" value="#706129">
-            <span class="slice-color-hex" data-slice="1" data-role="end">#706129</span>
+            <input class="slice-color-picker" type="color" data-slice="1" data-role="end" value="#D3BB92">
+            <span class="slice-color-hex" data-slice="1" data-role="end">#D3BB92</span>
           </div>
         </div>
       </div>

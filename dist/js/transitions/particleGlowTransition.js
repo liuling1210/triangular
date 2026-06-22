@@ -1,8 +1,8 @@
 import {
-  PYRAMID_EFFECT_MODES,
-  BASE_BLOOM_STRENGTH
+  PYRAMID_EFFECT_MODES
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
+import { getFullBloomStrength } from '../utils/viewAdaptation.js';
 import {
   getEdgeFlowOpacity,
   getEdgeFlowOuterIntensity,
@@ -10,7 +10,7 @@ import {
 } from '../ui/edgeFlowControls.js';
 import { resetParticleCloudColors } from '../scene/particlePyramid.js';
 import { applyPyramidColorAndBrightness } from '../ui/pyramidControls.js';
-import { applyAxisMaterial } from '../ui/axisControls.js';
+import { applyAxisMaterial, applyAxisRevealWeight } from '../ui/axisControls.js';
 import {
   isEffectTransitioning,
   restoreGlowObjectVisibility
@@ -149,11 +149,7 @@ function setGlowMaterializeWeight(progress) {
 
   applyPhysical(mats.solid, 1, getFootEmissiveIntensity(), coreT);
   applyPhysical(mats.base, 1, getFootEmissiveIntensity(), coreT);
-  if (mats.axis) {
-    mats.axis.transparent = coreT < 0.999;
-    mats.axis.opacity = coreT;
-    mats.axis.emissiveIntensity = state.axisSettings.emissiveIntensity * coreT;
-  }
+  applyAxisRevealWeight(coreT > 0.004 ? 1 : 0, { opacityFade: false });
 
   applyPhysical(mats.shell, getShellOpacity(), getShellEmissiveIntensity(), shellT);
 
@@ -191,9 +187,11 @@ function syncGlowMaterializeVisibility(coreT, shellT, sliceT, decorT) {
 
   glow.visible = coreT > 0.004 || shellT > 0.004 || sliceT > 0.004 || decorT > 0.004;
 
+  const showAxis = coreT > 0.004;
   objects.meshes.forEach((mesh) => {
     mesh.visible = true;
   });
+  if (objects.axisShaft) objects.axisShaft.visible = showAxis;
 
   const showSliceLines = sliceT > GLOW_SLICE_LINES_SHOW;
   objects.sliceEdgeLines.forEach((line) => {
@@ -209,7 +207,7 @@ function syncGlowMaterializeVisibility(coreT, shellT, sliceT, decorT) {
 
 function applyBloomForTransition(progress) {
   if (!state.bloomPass) return;
-  const fullBloom = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
+  const fullBloom = getFullBloomStrength();
   const peakBloom = fullBloom * BLOOM_PEAK_RATIO;
 
   if (progress < CHARGE_END) {
@@ -233,7 +231,7 @@ function applySettlePhase(settleT) {
   }
 
   if (state.bloomPass) {
-    const fullBloom = BASE_BLOOM_STRENGTH * state.pyramidBrightness;
+    const fullBloom = getFullBloomStrength();
     state.bloomPass.strength = lerp(state.bloomPass.strength, fullBloom, smootherstep(settleT));
   }
 }
