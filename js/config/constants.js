@@ -46,34 +46,39 @@ export const STRATEGIC_LABEL_SCREEN_RANGE = {
   y: { min: 0, max: 100 }
 };
 
-export const DEFAULT_STRATEGIC_LABEL_FONT_SIZE = 17;
+export const DEFAULT_STRATEGIC_LABEL_FONT_SIZE = 20;
 export const STRATEGIC_LABEL_FONT_SIZE_RANGE = { min: 10, max: 40 };
 
 export const DEFAULT_SLICE_GRADIENTS = [
-  { start: '#1C1C1C', end: '#D6B884' },
-  { start: '#1C1C1C', end: '#D3BB92' }
+  { start: '#61523D', end: '#D6B884' },
+  { start: '#61523D', end: '#D3BB92' }
 ];
 
 export const DEFAULT_AXIS_SETTINGS = {
-  color: '#AA937A',
+  color: '#DCBB98',
   colorBrightness: 1.75,
   emissiveStrength: 0.95,
-  emissiveIntensity: 0.44,
-  metalness: 0.79,
+  emissiveIntensity: 0.36,
+  metalness: 0.24,
   roughness: 0.36,
   clearcoat: 0.9,
   clearcoatRoughness: 0.06,
-  lightIntensity: 2.8
+  lightIntensity: 2.8,
+  /** 纵向亮度遮罩：中段 1.0，上下端降至 gradientEndDarkness */
+  gradientEndDarkness: 0.6,
+  gradientCenter: 0.53,
+  gradientHalfWidth: 0.43,
+  gradientStrength: 1.0
 };
 
 /** 三棱锥上半段玻璃外壳（shell）材质参数 */
 export const DEFAULT_SHELL_SETTINGS = {
-  color: '#B6E5FB',
-  colorBrightness: 0.83,
+  color: '#FFFFFF',
+  colorBrightness: 0.72,
   emissiveStrength: 0.1,
-  emissiveIntensity: 1.49,
-  opacity: 0.7,
-  transmission: 0.12,
+  emissiveIntensity: 1.34,
+  opacity: 0.62,
+  transmission: 1.0,
   thickness: 2.19,
   roughness: 0.19,
   metalness: 0.54,

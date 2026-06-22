@@ -28,6 +28,7 @@ import {
   clipInnerEdgeStart
 } from '../utils/geometry.js';
 import { createGradientSliceMaterial } from '../materials/sliceMaterial.js';
+import { createAxisPhysicalMaterial } from '../materials/axisMaterial.js';
 import { createWireframePyramid } from './wireframePyramid.js';
 import { createParticlePyramid } from './particlePyramid.js';
 import { createEdgeGlowTubes } from './edgeGlowTubes.js';
@@ -310,21 +311,7 @@ export function createPyramid() {
     state.glowObjects.sliceInnerEdgeLines.push(innerEdge);
   });
 
-  const axisMat = new THREE.MeshPhysicalMaterial({
-    color: DEFAULT_AXIS_SETTINGS.color,
-    metalness: DEFAULT_AXIS_SETTINGS.metalness,
-    roughness: DEFAULT_AXIS_SETTINGS.roughness,
-    emissive: new THREE.Color(DEFAULT_AXIS_SETTINGS.color),
-    emissiveIntensity: DEFAULT_AXIS_SETTINGS.emissiveIntensity,
-    clearcoat: DEFAULT_AXIS_SETTINGS.clearcoat,
-    clearcoatRoughness: DEFAULT_AXIS_SETTINGS.clearcoatRoughness,
-    transparent: false,
-    opacity: 1,
-    transmission: 0,
-    depthWrite: true,
-    depthTest: true,
-    side: THREE.FrontSide
-  });
+  const axisMat = createAxisPhysicalMaterial(DEFAULT_AXIS_SETTINGS);
   state.pyramidMats.axis = axisMat;
 
   const axisShaft = new THREE.Group();
