@@ -19,10 +19,10 @@ export const SHOW_LABELS = false;
 export const DEFAULT_BRIGHTNESS = 0.74;
 
 export const STRATEGIC_LABEL_ITEMS = [
-  { key: 'base', text: '以价值三角为基', position: { x: 50.2, y: 76.6 } },
-  { key: 'axis', text: '以战略中轴为路', position: { x: 36.2, y: 39.4 } },
-  { key: 'slices', text: '以战略课题为门', position: { x: 65.6, y: 46.8 } },
-  { key: 'apex', text: '战略目标', position: { x: 49.1, y: 11.9 } }
+  { key: 'base', text: '以价值三角为基', position: { x: 49.8, y: 76.6 } },
+  { key: 'axis', text: '以战略中轴为路', position: { x: 33.8, y: 39.4 } },
+  { key: 'slices', text: '以战略课题为门', position: { x: 65.6, y: 39.7 } },
+  { key: 'apex', text: '战略目标', position: { x: 49.8, y: 5.9 } }
 ];
 
 export const STRATEGIC_APEX_BG_IMAGE = 'public/bg.png';
