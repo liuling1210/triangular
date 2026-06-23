@@ -27,6 +27,7 @@ import { setupGridUI } from '../ui/gridControls.js';
 import { setupStrategicLabelUI } from '../ui/strategicLabelControls.js';
 import { setupPanelSections } from '../ui/panelSections.js';
 import { setupColorEyedroppers } from '../ui/colorEyedropper.js';
+import { setupSceneCoordPicker } from '../ui/sceneCoordPicker.js';
 import { setPyramidEffect } from '../ui/effectControls.js';
 import {
   updateGlowWireTransition
@@ -134,6 +135,7 @@ function init() {
   applyShellMaterial();
 
   setupColorEyedroppers();
+  setupSceneCoordPicker(canvas);
 
   state.clock = new THREE.Clock();
   startInitialReveal();

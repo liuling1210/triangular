@@ -23,7 +23,7 @@ export const STRATEGIC_LABEL_ITEMS = [
   { key: 'base', text: '以价值三角为基', position: { x: 49.8, y: 76.6 } },
   { key: 'axis', text: '以战略中轴为路', position: { x: 33.8, y: 39.4 } },
   { key: 'slices', text: '以战略课题为门', position: { x: 65.6, y: 39.7 } },
-  { key: 'apex', text: '战略目标', position: { x: 49.8, y: 5.9 } }
+  { key: 'apex', text: '战略目标', position: { x: 49.2, y: 5.9 } }
 ];
 
 export const STRATEGIC_APEX_BG_IMAGE = 'public/bg.png';
@@ -45,6 +45,15 @@ export const DEFAULT_STRATEGIC_LABEL_POSITIONS = Object.fromEntries(
 export const STRATEGIC_LABEL_SCREEN_RANGE = {
   x: { min: 0, max: 100 },
   y: { min: 0, max: 100 }
+};
+
+/** 战略文字位置滑块细调范围（相对默认位置 ±7%） */
+export const STRATEGIC_LABEL_ADJUST_RANGE = {
+  base: { x: { min: 42.8, max: 56.8 }, y: { min: 69.6, max: 83.6 } },
+  axis: { x: { min: 26.8, max: 40.8 }, y: { min: 32.4, max: 46.4 } },
+  slices: { x: { min: 58.6, max: 72.6 }, y: { min: 32.7, max: 46.7 } },
+  apex: { x: { min: 42.8, max: 56.8 }, y: { min: 0, max: 12.9 } },
+  apexBg: { x: { min: 42.2, max: 56.2 }, y: { min: 8.6, max: 22.6 } }
 };
 
 export const DEFAULT_STRATEGIC_LABEL_FONT_SIZE = 20;
@@ -319,5 +328,11 @@ export const GLITCH_BG = {
   flashFlickersMin: 3,
   flashFlickersMax: 5,
   holdMs: 1000,
-  edgeInsetPx: 16
+  edgeInsetPx: 16,
+  /** 字符不在此三角形内出现（屏幕像素坐标），设为 null 则不限制 */
+  glyphTriangle: [
+    { x: 943, y: 156 },
+    { x: 1390, y: 921 },
+    { x: 453, y: 918 }
+  ]
 };

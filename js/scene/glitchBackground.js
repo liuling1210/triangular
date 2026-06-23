@@ -37,10 +37,41 @@ function nextIdleDelay() {
   return rand(GLITCH_BG.idleMinMs, GLITCH_BG.idleMaxMs);
 }
 
-/** 在视口内随机生成一个屏幕坐标（避开边缘） */
+/** 判断点是否在三角形内（同向叉积法） */
+function pointInTriangle(px, py, a, b, c) {
+  const d1 = (px - b.x) * (a.y - b.y) - (a.x - b.x) * (py - b.y);
+  const d2 = (px - c.x) * (b.y - c.y) - (b.x - c.x) * (py - c.y);
+  const d3 = (px - a.x) * (c.y - a.y) - (c.x - a.x) * (py - a.y);
+  const hasNeg = d1 < 0 || d2 < 0 || d3 < 0;
+  const hasPos = d1 > 0 || d2 > 0 || d3 > 0;
+  return !(hasNeg && hasPos);
+}
+
+/** 当前点是否位于字符排除的三角形区域内 */
+function isInsideExcludedTriangle(x, y) {
+  const triangle = GLITCH_BG.glyphTriangle;
+  if (!triangle || triangle.length !== 3) return false;
+  const [a, b, c] = triangle;
+  return pointInTriangle(x, y, a, b, c);
+}
+
+/** 在视口内随机生成屏幕坐标（避开边缘，且不在排除三角形内） */
 function randomScreenPosition() {
   const { width, height } = viewport;
   const inset = GLITCH_BG.edgeInsetPx;
+  const triangle = GLITCH_BG.glyphTriangle;
+
+  if (triangle && triangle.length === 3) {
+    const [a, b, c] = triangle;
+    for (let i = 0; i < 48; i++) {
+      const pos = {
+        x: rand(inset, width - inset),
+        y: rand(inset, height - inset)
+      };
+      if (!pointInTriangle(pos.x, pos.y, a, b, c)) return pos;
+    }
+  }
+
   return {
     x: rand(inset, width - inset),
     y: rand(inset, height - inset)
@@ -151,6 +182,7 @@ function parseGlyphColor(opacity) {
 /** 在 Canvas 上绘制单个字符（支持 RGB 分离与发光） */
 function drawGlyph(slot) {
   if (!ctx || slot.opacity <= 0) return;
+  if (isInsideExcludedTriangle(slot.x, slot.y)) return;
 
   const { x, y, char, fontSize, opacity, jitterX, rgbSplit } = slot;
   const textX = x + jitterX;

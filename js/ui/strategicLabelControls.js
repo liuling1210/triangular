@@ -1,9 +1,9 @@
 /** 战略标签位置与样式 UI 控制 */
 import {
   STRATEGIC_APEX_BG_RANGE,
+  STRATEGIC_LABEL_ADJUST_RANGE,
   STRATEGIC_LABEL_FONT_SIZE_RANGE,
-  STRATEGIC_LABEL_ITEMS,
-  STRATEGIC_LABEL_SCREEN_RANGE
+  STRATEGIC_LABEL_ITEMS
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import {
@@ -13,10 +13,22 @@ import {
 } from '../scene/strategicLabels.js';
 
 const AXES = ['x', 'y'];
+/** 滑块 raw 值与屏幕百分比的换算：1 raw = 0.01% */
+const SCREEN_PERCENT_SCALE = 1000;
 
 /** 格式化屏幕坐标百分比显示 */
 function formatScreenValue(value) {
-  return `${value.toFixed(1)}%`;
+  return `${value.toFixed(2)}%`;
+}
+
+/** 百分比转滑块 raw 值 */
+function toSliderRaw(percent) {
+  return Math.round(percent * SCREEN_PERCENT_SCALE);
+}
+
+/** 滑块 raw 值转百分比 */
+function fromSliderRaw(raw) {
+  return raw / SCREEN_PERCENT_SCALE;
 }
 
 /** 生成标签位置滑块 DOM id */
@@ -47,6 +59,19 @@ function syncFontSizeControl() {
   if (label) label.textContent = `${state.strategicLabelFontSize}px`;
 }
 
+/** 获取指定标签轴的滑块细调范围 */
+function getAdjustRange(key, axis) {
+  return STRATEGIC_LABEL_ADJUST_RANGE[key][axis];
+}
+
+/** 将滑块 min/max 同步为细调范围（raw 值 = 百分比 × 1000） */
+function configureSliderRange(slider, key, axis) {
+  const range = getAdjustRange(key, axis);
+  slider.min = toSliderRaw(range.min);
+  slider.max = toSliderRaw(range.max);
+  slider.step = 1;
+}
+
 /** 同步顶点背景控件显示 */
 function syncApexBgControlValues() {
   const { width, position } = state.strategicApexBg;
@@ -58,7 +83,7 @@ function syncApexBgControlValues() {
   AXES.forEach((axis) => {
     const slider = document.getElementById(apexBgSliderId(axis));
     const label = document.getElementById(apexBgValueId(axis));
-    if (slider) slider.value = Math.round(position[axis] * 10);
+    if (slider) slider.value = toSliderRaw(position[axis]);
     if (label) label.textContent = formatScreenValue(position[axis]);
   });
 }
@@ -76,8 +101,8 @@ function applyApexBgWidth(rawValue) {
 
 /** 应用顶点背景位置并更新 UI */
 function applyApexBgPosition(axis, rawValue) {
-  const range = STRATEGIC_LABEL_SCREEN_RANGE[axis];
-  const value = Math.max(range.min, Math.min(range.max, rawValue / 10));
+  const range = getAdjustRange('apexBg', axis);
+  const value = Math.max(range.min, Math.min(range.max, fromSliderRaw(rawValue)));
   state.strategicApexBg.position[axis] = value;
   applyStrategicApexBgSettings();
 
@@ -92,7 +117,7 @@ function syncLabelControlValues() {
     AXES.forEach((axis) => {
       const slider = document.getElementById(sliderId(key, axis));
       const label = document.getElementById(valueId(key, axis));
-      if (slider) slider.value = Math.round(position[axis] * 10);
+      if (slider) slider.value = toSliderRaw(position[axis]);
       if (label) label.textContent = formatScreenValue(position[axis]);
     });
   });
@@ -102,8 +127,8 @@ function syncLabelControlValues() {
 
 /** 应用单个标签轴坐标并更新 UI */
 function applyAxisValue(key, axis, rawValue) {
-  const range = STRATEGIC_LABEL_SCREEN_RANGE[axis];
-  const value = Math.max(range.min, Math.min(range.max, rawValue / 10));
+  const range = getAdjustRange(key, axis);
+  const value = Math.max(range.min, Math.min(range.max, fromSliderRaw(rawValue)));
   state.strategicLabelPositions[key][axis] = value;
   applyStrategicLabelPositions(key);
 
@@ -128,6 +153,7 @@ export function setupStrategicLabelUI() {
     AXES.forEach((axis) => {
       const slider = document.getElementById(sliderId(key, axis));
       if (!slider) return;
+      configureSliderRange(slider, key, axis);
       slider.addEventListener('input', (event) => {
         applyAxisValue(key, axis, parseFloat(event.target.value));
       });
@@ -151,6 +177,7 @@ export function setupStrategicLabelUI() {
   AXES.forEach((axis) => {
     const slider = document.getElementById(apexBgSliderId(axis));
     if (!slider) return;
+    configureSliderRange(slider, 'apexBg', axis);
     slider.addEventListener('input', (event) => {
       applyApexBgPosition(axis, parseFloat(event.target.value));
     });
