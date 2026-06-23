@@ -1,7 +1,9 @@
+/** 棱边流光管：内/外双层 Tube 几何与重建 */
 import { EDGE_FLOW, RENDER_ORDER } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import { createEdgeFlowMaterial } from '../materials/edgeFlowMaterial.js';
 
+/** 释放流光管组及其几何体与材质 */
 function disposeEdgeGlowTubes(objects) {
   if (!objects) return;
 
@@ -12,6 +14,7 @@ function disposeEdgeGlowTubes(objects) {
   objects.innerMats?.forEach((mat) => mat.dispose());
 }
 
+/** 从现有流光管材质中收集相位值以便重建时保留 */
 function collectPhases(existing) {
   if (!existing?.outerMats?.length) {
     return null;
@@ -19,6 +22,7 @@ function collectPhases(existing) {
   return existing.outerMats.map((mat) => mat.uniforms.uPhase.value);
 }
 
+/** 按内缩比例在底角与顶点之间创建 LineCurve3 */
 function createInsetEdgeCurve(baseVert, apex) {
   const settings = state.edgeFlowSettings;
   const start = baseVert.clone();
@@ -31,6 +35,7 @@ function createInsetEdgeCurve(baseVert, apex) {
   return new THREE.LineCurve3(curveStart, curveEnd);
 }
 
+/** 为三条棱边各创建内外双层 Tube 流光并加入组 */
 export function createEdgeGlowTubes(group, apex, baseVerts, phases = null) {
   const tubeGroup = new THREE.Group();
   const outerMeshes = [];
@@ -80,6 +85,7 @@ export function createEdgeGlowTubes(group, apex, baseVerts, phases = null) {
   return { tubeGroup, outerMeshes, innerMeshes, outerMats, innerMats };
 }
 
+/** 按当前设置重建流光管并保留原有相位 */
 export function rebuildEdgeGlowTubes() {
   const glowGroup = state.pyramidGroups.glow;
   const apex = state.pyramidApex;

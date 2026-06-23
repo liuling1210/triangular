@@ -1,7 +1,9 @@
+/** 网格线在 XZ 平面上的三角形裁剪与射线求交工具 */
 import { state } from '../state/appState.js';
 
 const EPS = 1e-5;
 
+/** 二维叉积（用于共面方向判定） */
 function cross2(ax, az, bx, bz) {
   return ax * bz - az * bx;
 }
@@ -13,7 +15,8 @@ export function getGridClipTriangle() {
   return verts.map((v) => new THREE.Vector3(v.x, 0, v.z));
 }
 
-export function pointInTriangleXZ(p, v0, v1, v2) {
+/** 判断点 p 是否位于 XZ 平面三角形 (v0,v1,v2) 内部或边上 */
+function pointInTriangleXZ(p, v0, v1, v2) {
   const sign = (px, pz, ax, az, bx, bz) =>
     cross2(px - bx, pz - bz, ax - bx, az - bz);
 
@@ -26,6 +29,7 @@ export function pointInTriangleXZ(p, v0, v1, v2) {
   return !(hasNeg && hasPos);
 }
 
+/** 求线段与三角形某条边在参数 t∈[0,1] 上的交点参数，无交则返回 null */
 function segmentEdgeIntersectionT(p0x, p0z, dX, dZ, e0, e1) {
   const sX = e1.x - e0.x;
   const sZ = e1.z - e0.z;

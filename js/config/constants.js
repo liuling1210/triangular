@@ -1,3 +1,4 @@
+/** 全局应用配置：相机、材质默认值、网格与特效参数 */
 export const INITIAL_CAMERA = {
   position: { x: -0.074, y: 8.188, z: -0.073 },
   target: { x: -0.074, y: 1.35, z: -0.073 },
@@ -53,6 +54,27 @@ export const DEFAULT_SLICE_GRADIENTS = [
   { start: '#61523D', end: '#D6B884' },
   { start: '#61523D', end: '#D3BB92' }
 ];
+
+/** 三棱锥底角小圆柱 */
+export const DEFAULT_BASE_CORNER_CYLINDER_SETTINGS = {
+  radius: 0.08,
+  height: 0.01,
+  longitudinalOffset: 0,
+  outwardOffset: 0,
+  vertexOffsets: [
+    { x: 0, y: -0.05, z: 0 },
+    { x: 0, y: -0.05, z: 0 },
+    { x: 0, y: -0.05, z: 0 }
+  ],
+  color: '#907647',
+  colorBrightness: 1,
+  emissiveStrength: 0.25,
+  emissiveIntensity: 0.57,
+  metalness: 0.9,
+  roughness: 0.15,
+  clearcoat: 0.8,
+  clearcoatRoughness: 0.1
+};
 
 export const DEFAULT_AXIS_SETTINGS = {
   color: '#DCBB98',
@@ -120,21 +142,13 @@ export const TOP_DOWN_BLOOM = {
   threshold: 0.5
 };
 
-export const BASE_AMBIENT_INTENSITY = 0.6;
-export const BLOOM_THRESHOLD = 0.15;
-export const BLOOM_RADIUS = 0.45;
-
 export const DEFAULT_SLICE_OPACITY = {
   opacityCenter: 0.34,
   opacityEdge: 0.61,
   fadeRange: 0.8
 };
 
-export const BASE_TONE_EXPOSURE = 1.2;
-export const BASE_BLOOM_STRENGTH = 0.85;
-export const BASE_LIGHT_INTENSITIES = { key: 1.2, core: 2.5, axis: 2.8 };
-
-/** 发光模式场景灯光与后处理参数（左侧面板可调） */
+/** 发光模式场景灯光与后处理参数 */
 export const DEFAULT_GLOW_LIGHT_SETTINGS = {
   ambientIntensity: 1,
   keyIntensity: 1.3,
@@ -155,6 +169,7 @@ export const DEFAULT_GLOW_LIGHT_SETTINGS = {
   axisLightPosition: { x: 0, y: 1.65, z: 0 }
 };
 
+/** 深拷贝发光灯光配置 */
 export function cloneGlowLightSettings(source = DEFAULT_GLOW_LIGHT_SETTINGS) {
   return {
     ...source,
@@ -172,6 +187,7 @@ export const RENDER_ORDER = {
   shell: 2,
   particles: 4,
   edge: 5,
+  baseCornerCone: 6,
   axis: 7,
   slicePlane: 8,
   sliceInnerEdge: 9,
@@ -226,7 +242,7 @@ export const SOLID_CAP_HEIGHT = 0.04;
 export const R = 2.0;
 export const H = 3.0;
 export const PYRAMID_EFFECT_MODES = { GLOW: 'glow', WIREFRAME: 'wireframe', PARTICLES: 'particles' };
-/** 粒子效果模式中的点云颜色 RGB(194, 168, 144) */
+/** 粒子效果模式中的点云颜色 */
 export const PARTICLE_EFFECT_COLOR = '#C2A890';
 export const WIREFRAME_MOTION_COLOR = '#ffffff';
 export const SHAFT_RADIUS = 0.05;
@@ -251,7 +267,8 @@ export const GRID = {
 };
 
 /** 以三棱锥底面外接圆 R 为锚点，向内/外等距生成圈层 */
-export function computeGridRingRadii(ringCount, radiusScale, step = GRID.ringStep) {
+/** 根据圈层数量与缩放系数生成同心圆半径序列 */
+function computeGridRingRadii(ringCount, radiusScale, step = GRID.ringStep) {
   const scaledStep = step * radiusScale;
   const pyramidRingIdx = Math.max(0, ringCount - 2);
   return Array.from({ length: ringCount }, (_, i) => {
@@ -260,6 +277,7 @@ export function computeGridRingRadii(ringCount, radiusScale, step = GRID.ringSte
   });
 }
 
+/** 从网格设置中读取并计算各圈半径 */
 export function getGridRingRadii(settings) {
   const count = settings.ringCount ?? GRID.ringCount;
   const scale = settings.ringRadiusScale ?? GRID.ringRadiusScale;
@@ -267,6 +285,7 @@ export function getGridRingRadii(settings) {
   return computeGridRingRadii(count, scale, step);
 }
 
+/** 同步网格派生字段 */
 export function syncGridDerivedSettings(settings) {
   const radii = getGridRingRadii(settings);
   settings.maxRadius = radii[radii.length - 1];
@@ -284,7 +303,7 @@ export const DEFAULT_GRID_SETTINGS = {
   brightness: GRID.brightness
 };
 
-/** 背景 J/Z/X/+ 电视式闪烁 */
+/** 背景 J/Z/X/+ */
 export const GLITCH_BG = {
   chars: ['J', 'Z', 'X', '+'],
   slotCount: 24,

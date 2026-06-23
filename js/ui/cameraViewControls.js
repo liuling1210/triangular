@@ -1,19 +1,13 @@
+/** 相机预设视角切换与平滑过渡 */
 import { FRONT_VIEW_CAMERA } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import { applyCameraPreset, getPresetCameraState } from '../utils/cameraPreset.js';
+import { smootherstep } from '../utils/math.js';
 
 const VIEW_FRONT = 'front';
 const TRANSITION_DURATION = 1.2;
 
-function smootherstep(t) {
-  const x = Math.max(0, Math.min(1, t));
-  return x * x * x * (x * (x * 6 - 15) + 10);
-}
-
-export function isCameraViewTransitioning() {
-  return state.cameraViewTransition != null;
-}
-
+/** 完成相机视角过渡并恢复控制器 */
 function finishCameraViewTransition() {
   const transition = state.cameraViewTransition;
   if (!transition) return;
@@ -28,6 +22,7 @@ function finishCameraViewTransition() {
   state.cameraViewTransition = null;
 }
 
+/** 每帧更新相机视角平滑过渡 */
 export function updateCameraViewTransition() {
   const transition = state.cameraViewTransition;
   if (!transition || !state.clock) return;
@@ -47,6 +42,7 @@ export function updateCameraViewTransition() {
   }
 }
 
+/** 启动到指定预设视角的平滑过渡 */
 function setCameraView(preset, viewKey) {
   if (!state.camera || !state.controls || !state.clock) return;
   if (state.cameraViewTransition?.viewKey === viewKey) return;
@@ -68,6 +64,7 @@ function setCameraView(preset, viewKey) {
   };
 }
 
+/** 平滑飞行到正视图预设 */
 export function flyCameraToFrontView() {
   if (!state.camera || !state.controls || !state.clock) return;
   if (state.cameraViewTransition?.viewKey === VIEW_FRONT) return;

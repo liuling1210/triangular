@@ -1,13 +1,17 @@
+/** 外壳材质 UI 控制 */
 import { state } from '../state/appState.js';
 
+/** 获取外壳不透明度 */
 export function getShellOpacity() {
   return state.shellSettings.opacity;
 }
 
+/** 获取外壳发光强度系数 */
 export function getShellEmissiveIntensity() {
   return state.shellSettings.emissiveIntensity;
 }
 
+/** 应用外壳材质并同步 UI 标签 */
 export function applyShellMaterial() {
   const mat = state.pyramidMats.shell;
   if (!mat) return;
@@ -51,6 +55,7 @@ export function applyShellMaterial() {
     `${Math.round(shellSettings.clearcoatRoughness * 100)}%`;
 }
 
+/** 绑定外壳材质控制面板事件 */
 export function setupShellUI() {
   document.getElementById('shell-color-picker').addEventListener('input', (e) => {
     state.shellSettings.color = e.target.value;

@@ -1,3 +1,4 @@
+/** 初始入场揭示动画：底面轮廓绘制 → 实体填充 → 逐层展开 */
 import {
   REVEAL_CONTOUR_LINE_COLOR,
   REVEAL_CONTOUR_LINE_WIDTH
@@ -15,6 +16,7 @@ import {
 import {
   getMotionParticleOpacity
 } from '../utils/motionParticleSettings.js';
+import { clamp01, lerp, smootherstep } from '../utils/math.js';
 import { restoreGlowObjectVisibility } from './glowWireframeTransition.js';
 import { flyCameraToFrontView } from '../ui/cameraViewControls.js';
 import { setPyramidAutoRotate } from '../ui/pyramidAutoRotateControls.js';
@@ -30,6 +32,11 @@ import {
   showAllStrategicLabels,
   updateStrategicLabelReveal
 } from '../scene/strategicLabels.js';
+import {
+  hideBaseCornerConesForReveal,
+  resetBaseCornerConesReveal,
+  syncBaseCornerConesWithAxis
+} from '../scene/baseCornerCones.js';
 
 /** 底面外轮廓：1号 → 3号 → 2号 → 回到 1号 */
 const CONTOUR_VERTEX_PATH = [[0, 2], [2, 1], [1, 0]];
@@ -42,6 +49,7 @@ const CONTOUR_SEGMENT_AXIS = new THREE.Vector3(0, 0, 1);
 const CONTOUR_SEGMENT_DURATION = 0.58;
 const CONTOUR_SEGMENT_OVERLAP = 0.1;
 
+/** 计算轮廓绘制阶段的总时长 */
 function contourEndTime() {
   const n = CONTOUR_VERTEX_PATH.length;
   return (n - 1) * (CONTOUR_SEGMENT_DURATION - CONTOUR_SEGMENT_OVERLAP) + CONTOUR_SEGMENT_DURATION;
@@ -65,6 +73,10 @@ const REVEAL_DURATIONS = {
   particles: PARTICLES_DURATION
 };
 
+const SLICE_LAYER_OFFSET = 0.2;
+const SLICE_LAYER_DURATION = 0.85;
+
+/** 根据底面实体开始时间构建各阶段有效时间线 */
 function buildEffectiveTimeline(reveal) {
   const baseStart = reveal?.baseSolidStartTime;
   if (baseStart == null) {
@@ -78,53 +90,23 @@ function buildEffectiveTimeline(reveal) {
   const axisEnd = axisStart + AXIS_DURATION;
   const slicesStart = axisEnd;
   const slicesEnd = slicesStart + SLICES_DURATION;
+  const particlesStart = slicesEnd;
 
   return {
     baseSolid: { start: baseStart, duration: BASE_SOLID_DURATION },
     cameraFly: { start: cameraStart, duration: CAMERA_FLY_DURATION },
+    baseLabel: { start: cameraStart + CAMERA_FLY_DURATION, duration: BASE_SOLID_DURATION },
     shellEdges: { start: shellStart, duration: SHELL_GRID_DURATION },
     gridInner: { start: shellStart, duration: SHELL_GRID_DURATION },
     axis: { start: axisStart, duration: AXIS_DURATION },
     slices: { start: slicesStart, duration: SLICES_DURATION },
-    particles: { start: slicesEnd, duration: PARTICLES_DURATION }
+    particles: { start: particlesStart, duration: PARTICLES_DURATION },
+    apexLabel: { start: particlesStart, duration: SLICES_DURATION }
   };
 }
 
-export { REVEAL_DURATIONS as REVEAL_TIMELINE };
-const SLICE_LAYER_OFFSET = 0.2;
-const SLICE_LAYER_DURATION = 0.85;
-
-function clamp01(v) {
-  return Math.max(0, Math.min(1, v));
-}
-
-function lerp(a, b, t) {
-  return a + (b - a) * t;
-}
-
-function smootherstep(t) {
-  t = clamp01(t);
-  return t * t * t * (t * (t * 6 - 15) + 10);
-}
-
-function phaseT(elapsed, phase) {
-  return smootherstep(clamp01((elapsed - phase.start) / phase.duration));
-}
-
-function getTotalDuration() {
-  return (
-    contourEndTime() +
-    BASE_SOLID_DURATION +
-    CAMERA_FLY_DURATION +
-    SHELL_GRID_DURATION +
-    AXIS_DURATION +
-    SLICES_DURATION +
-    PARTICLES_DURATION +
-    SETTLE_DURATION
-  );
-}
-
-export function getContourDrawProgress(elapsed, baseVerts = null) {
+/** 计算指定时刻的轮廓绘制进度（0–1） */
+function getContourDrawProgress(elapsed, baseVerts = null) {
   const verts = baseVerts ?? state.pyramidBaseVerts;
   if (!verts?.length) return 0;
 
@@ -143,10 +125,12 @@ export function getContourDrawProgress(elapsed, baseVerts = null) {
   return total > 0 ? clamp01(drawn / total) : 0;
 }
 
-export function getContourEndTime() {
+/** 返回轮廓绘制阶段的结束时间 */
+function getContourEndTime() {
   return contourEndTime();
 }
 
+/** 创建单段轮廓线段网格 */
 function createContourSegmentMesh(start, end, lineWidth, material) {
   const dir = new THREE.Vector3().subVectors(end, start);
   const length = dir.length();
@@ -163,6 +147,7 @@ function createContourSegmentMesh(start, end, lineWidth, material) {
   return mesh;
 }
 
+/** 创建可逐块显影的轮廓线段组 */
 function createProgressiveContourSegment(start, end, material, lineWidth) {
   const chunks = [];
   const segmentGroup = new THREE.Group();
@@ -190,6 +175,7 @@ function createProgressiveContourSegment(start, end, material, lineWidth) {
   return { group: segmentGroup, chunks, maxCount: chunks.length };
 }
 
+/** 按进度显示线段组中的块数 */
 function setLineProgress(segment, progress) {
   const count = Math.max(1, Math.floor(progress * segment.maxCount));
   segment.chunks.forEach((mesh, index) => {
@@ -197,6 +183,7 @@ function setLineProgress(segment, progress) {
   });
 }
 
+/** 创建揭示轮廓线材质 */
 function createRevealLineMaterial() {
   return new THREE.MeshBasicMaterial({
     color: REVEAL_CONTOUR_LINE_COLOR,
@@ -208,6 +195,7 @@ function createRevealLineMaterial() {
   });
 }
 
+/** 构建底面轮廓线段组 */
 function buildContourLines(baseVerts) {
   const lineMaterial = createRevealLineMaterial();
   const group = new THREE.Group();
@@ -224,6 +212,7 @@ function buildContourLines(baseVerts) {
   return { group, segments, lineMaterial };
 }
 
+/** 隐藏金字塔各层内容，准备入场动画 */
 function hidePyramidContent() {
   const objects = state.glowObjects;
   const { glow, flow } = state.pyramidGroups;
@@ -243,6 +232,7 @@ function hidePyramidContent() {
     objects.axisShaft.visible = false;
     objects.axisShaft.scale.y = 0.001;
   }
+  hideBaseCornerConesForReveal();
   objects.slicePlanes?.forEach((plane) => {
     plane.scale.set(0.92, 1, 0.92);
   });
@@ -285,16 +275,15 @@ function hidePyramidContent() {
     mat.uniforms.uIntensity.value = 0;
   });
 
-  state.baseCornerMarkers.forEach((marker) => {
-    marker.element.style.opacity = '0';
-  });
   hideAllStrategicLabels();
 }
 
+/** 双重 smootherstep 软揭示曲线 */
 function softReveal(t) {
   return smootherstep(smootherstep(clamp01(t)));
 }
 
+/** 软揭示物理材质（底面填充阶段） */
 function applyPhysicalRevealSoft(mat, baseOpacity, emissiveScale, weight) {
   if (!mat) return;
   const w = clamp01(weight);
@@ -308,6 +297,7 @@ function applyPhysicalRevealSoft(mat, baseOpacity, emissiveScale, weight) {
   }
 }
 
+/** 标准揭示物理材质（外壳/切片等阶段） */
 function applyPhysicalReveal(mat, baseOpacity, emissiveScale, weight) {
   if (!mat) return;
   const w = clamp01(weight);
@@ -320,31 +310,13 @@ function applyPhysicalReveal(mat, baseOpacity, emissiveScale, weight) {
   }
 }
 
-function updateCornerMarkers(elapsed) {
-  const markers = state.baseCornerMarkers;
-  if (!markers.length) return;
-  if (!state.showCornerMarkers) {
-    markers.forEach((marker) => {
-      marker.element.style.opacity = '0';
-    });
-    return;
-  }
-
-  const segStarts = CONTOUR_VERTEX_PATH.map((_, i) => i * (CONTOUR_SEGMENT_DURATION - CONTOUR_SEGMENT_OVERLAP));
-
-  markers[0].element.style.opacity = elapsed > segStarts[0] ? '1' : '0';
-  markers[2].element.style.opacity = elapsed > segStarts[0] + CONTOUR_SEGMENT_DURATION * 0.85 ? '1' : '0';
-  markers[1].element.style.opacity = elapsed > segStarts[1] + CONTOUR_SEGMENT_DURATION * 0.85 ? '1' : '0';
-}
-
+/** 更新底面轮廓线的绘制与淡出 */
 function updateBaseLines(elapsed, reveal) {
   reveal.segments.forEach((segment, index) => {
     const segStart = index * (CONTOUR_SEGMENT_DURATION - CONTOUR_SEGMENT_OVERLAP);
     const progress = smootherstep(clamp01((elapsed - segStart) / CONTOUR_SEGMENT_DURATION));
     setLineProgress(segment, progress);
   });
-
-  updateCornerMarkers(elapsed);
 
   const contourProgress = getContourDrawProgress(elapsed, state.pyramidBaseVerts);
   reveal.contourProgress = contourProgress;
@@ -367,6 +339,7 @@ function updateBaseLines(elapsed, reveal) {
   }
 }
 
+/** 更新底面实体填充阶段 */
 function updateBaseSolid(elapsed, reveal) {
   const baseStart = reveal.baseSolidStartTime;
   if (baseStart == null) return;
@@ -384,10 +357,31 @@ function updateBaseSolid(elapsed, reveal) {
   if (bottomCap) bottomCap.visible = baseW > 0.008;
   if (topCap) topCap.visible = baseW > 0.008;
   if (bottomMesh) bottomMesh.visible = solidW > 0.008;
+
   applyPhysicalRevealSoft(mats.base, 1, getFootEmissiveIntensityForReveal(), baseW);
   applyPhysicalRevealSoft(mats.solid, 1, getFootEmissiveIntensityForReveal(), solidW);
 }
 
+/** 计算阶段归一化进度 */
+function phaseT(elapsed, phase) {
+  return smootherstep(clamp01((elapsed - phase.start) / phase.duration));
+}
+
+/** 计算揭示动画总时长 */
+function getTotalDuration() {
+  return (
+    getContourEndTime() +
+    BASE_SOLID_DURATION +
+    CAMERA_FLY_DURATION +
+    SHELL_GRID_DURATION +
+    AXIS_DURATION +
+    SLICES_DURATION +
+    PARTICLES_DURATION +
+    SETTLE_DURATION
+  );
+}
+
+/** 更新外壳与边缘流光揭示 */
 function updateShellEdges(elapsed, timeline) {
   const w = phaseT(elapsed, timeline.shellEdges);
   const edgeW = smootherstep(clamp01(w * 1.12 + 0.04));
@@ -415,6 +409,7 @@ function updateShellEdges(elapsed, timeline) {
   });
 }
 
+/** 更新中心轴揭示 */
 function updateAxis(elapsed, timeline) {
   const w = phaseT(elapsed, timeline.axis);
   const objects = state.glowObjects;
@@ -435,8 +430,10 @@ function updateAxis(elapsed, timeline) {
   }
 
   applyAxisRevealWeight(w > 0.01 ? 1 : 0, { opacityFade: false });
+  syncBaseCornerConesWithAxis(w);
 }
 
+/** 更新单个切片层的揭示 */
 function updateSliceLayer(elapsed, sliceIndex, timeline) {
   const sliceStart = timeline.slices.start + sliceIndex * SLICE_LAYER_OFFSET;
   const w = smootherstep(clamp01((elapsed - sliceStart) / SLICE_LAYER_DURATION));
@@ -466,6 +463,7 @@ function updateSliceLayer(elapsed, sliceIndex, timeline) {
   if (innerLine) innerLine.visible = edgeW > 0.04;
 }
 
+/** 更新网格内圈揭示与交叉淡化 */
 function updateGridInner(elapsed, reveal, timeline) {
   const innerT = smootherstep(
     clamp01((elapsed - timeline.gridInner.start) / timeline.gridInner.duration)
@@ -480,11 +478,13 @@ function updateGridInner(elapsed, reveal, timeline) {
   updateGridRevealInner(innerT, gridCrossfadeElapsed);
 }
 
+/** 更新所有切片层揭示 */
 function updateSlices(elapsed, timeline) {
   updateSliceLayer(elapsed, 0, timeline);
   updateSliceLayer(elapsed, 1, timeline);
 }
 
+/** 更新运动粒子流揭示 */
 function updateParticles(elapsed, timeline) {
   const w = phaseT(elapsed, timeline.particles);
   const { flow } = state.pyramidGroups;
@@ -497,7 +497,7 @@ function updateParticles(elapsed, timeline) {
   }
 }
 
-
+/** 重置揭示结束后的场景状态 */
 function resetRevealState() {
   const objects = state.glowObjects;
   const mats = state.pyramidMats;
@@ -506,6 +506,7 @@ function resetRevealState() {
     objects.axisShaft.scale.y = 1;
     objects.axisShaft.visible = true;
   }
+  resetBaseCornerConesReveal();
   objects?.slicePlanes?.forEach((plane) => {
     plane.scale.set(1, 1, 1);
   });
@@ -515,6 +516,7 @@ function resetRevealState() {
   });
 }
 
+/** 完成初始揭示并清理临时资源 */
 function finishInitialReveal(reveal) {
   if (reveal.group.parent) {
     reveal.group.parent.remove(reveal.group);
@@ -531,14 +533,12 @@ function finishInitialReveal(reveal) {
   applyPyramidColorAndBrightness();
   applyAxisMaterial();
 
-  state.baseCornerMarkers.forEach((marker) => {
-    marker.element.style.opacity = state.showCornerMarkers ? '1' : '0';
-  });
   showAllStrategicLabels();
 
   state.initialReveal = null;
 }
 
+/** 启动初始入场揭示动画 */
 export function startInitialReveal() {
   const baseVerts = state.pyramidBaseVerts;
   if (!baseVerts?.length || !state.clock) return;
@@ -557,18 +557,21 @@ export function startInitialReveal() {
   state.initialReveal = reveal;
 }
 
+/** 在相机飞行阶段触发正视图过渡 */
 function updateInitialRevealCamera(elapsed, reveal, timeline) {
   if (!timeline || elapsed < timeline.cameraFly.start || reveal.cameraFlyStarted) return;
   reveal.cameraFlyStarted = true;
   flyCameraToFrontView();
 }
 
+/** 切片阶段完成后启动金字塔自转 */
 function maybeStartAutoRotateAfterSlices(elapsed, timeline, reveal) {
   if (reveal.autoRotateStarted || !timeline || elapsed < timeline.particles.start) return;
   reveal.autoRotateStarted = true;
   setPyramidAutoRotate(true);
 }
 
+/** 每帧更新初始揭示动画进度 */
 export function updateInitialReveal() {
   const reveal = state.initialReveal;
   if (!reveal || !state.clock) {
@@ -599,7 +602,7 @@ export function updateInitialReveal() {
       maybeStartAutoRotateAfterSlices(elapsed, timeline, reveal);
       updateParticles(elapsed, timeline);
     }
-    updateStrategicLabelReveal(elapsed, timeline, reveal);
+    updateStrategicLabelReveal(elapsed, timeline);
   }
 
   if (elapsed >= reveal.duration) {
@@ -607,10 +610,12 @@ export function updateInitialReveal() {
   }
 }
 
+/** 判断初始揭示动画是否正在进行 */
 export function isInitialRevealActive() {
   return Boolean(state.initialReveal);
 }
 
+/** 判断初始揭示是否已过切片阶段 */
 export function isInitialRevealPastSlices() {
   if (!state.initialReveal) return true;
   if (!state.clock || state.initialReveal.startTime == null) return false;

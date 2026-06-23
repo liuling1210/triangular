@@ -1,10 +1,13 @@
+/** 中心轴材质与 UI 控制 */
 import { applyAxisGradientUniforms } from '../materials/axisMaterial.js';
 import { state } from '../state/appState.js';
 
-export function getAxisEmissiveIntensity() {
+/** 计算中心轴当前发光强度 */
+function getAxisEmissiveIntensity() {
   return state.axisSettings.emissiveIntensity * state.pyramidBrightness;
 }
 
+/** 同步中心轴表面材质参数 */
 function syncAxisSurfaceMaterial(mat) {
   const baseColor = new THREE.Color(state.axisSettings.color);
   mat.color.copy(baseColor.clone().multiplyScalar(state.axisSettings.colorBrightness));
@@ -21,10 +24,7 @@ function syncAxisSurfaceMaterial(mat) {
   return baseColor;
 }
 
-/**
- * 动画渐显：表面参数与正式材质始终一致。
- * 默认不透明（opacityFade: false），由 scale / visible 控制出现；仅 wireframe 切换等需要时才做 opacity 淡出。
- */
+/** 按揭示权重应用中心轴材质（过渡/入场动画用） */
 export function applyAxisRevealWeight(revealWeight, { opacityFade = false } = {}) {
   const mat = state.pyramidMats.axis;
   if (!mat) return;
@@ -51,6 +51,7 @@ export function applyAxisRevealWeight(revealWeight, { opacityFade = false } = {}
   }
 }
 
+/** 应用中心轴材质并同步 UI 标签 */
 export function applyAxisMaterial() {
   const mat = state.pyramidMats.axis;
   const baseColor = mat ? syncAxisSurfaceMaterial(mat) : new THREE.Color(state.axisSettings.color);
@@ -79,6 +80,7 @@ export function applyAxisMaterial() {
   syncAxisGradientLabels();
 }
 
+/** 同步中心轴渐变相关 UI 标签 */
 function syncAxisGradientLabels() {
   const { axisSettings } = state;
   document.getElementById('axis-gradient-strength-val').textContent =
@@ -91,6 +93,7 @@ function syncAxisGradientLabels() {
     `${Math.round(axisSettings.gradientHalfWidth * 100)}%`;
 }
 
+/** 应用中心轴渐变设置到材质 */
 function applyAxisGradientSettings() {
   const mat = state.pyramidMats.axis;
   if (mat) {
@@ -99,6 +102,7 @@ function applyAxisGradientSettings() {
   syncAxisGradientLabels();
 }
 
+/** 绑定中心轴控制面板事件 */
 export function setupAxisUI() {
   document.getElementById('axis-color-picker').addEventListener('input', (e) => {
     state.axisSettings.color = e.target.value;

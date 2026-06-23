@@ -120,15 +120,11 @@ export function showAllStrategicLabels() {
 }
 
 /** 与 initialRevealTransition 时间轴同步 */
-export function updateStrategicLabelReveal(elapsed, timeline, reveal = null) {
+export function updateStrategicLabelReveal(elapsed, timeline) {
   if (!state.strategicLabels?.length || !timeline) return;
 
-  const contourDone = (reveal?.contourProgress ?? 0) >= 0.999;
-  setStrategicLabelOpacity(
-    'base',
-    contourDone ? phaseOpacity(elapsed, timeline.baseSolid) : 0
-  );
+  setStrategicLabelOpacity('base', phaseOpacity(elapsed, timeline.baseLabel));
   setStrategicLabelOpacity('axis', phaseOpacity(elapsed, timeline.axis));
   setStrategicLabelOpacity('slices', phaseOpacity(elapsed, timeline.slices));
-  setStrategicLabelOpacity('apex', phaseOpacity(elapsed, timeline.slices));
+  setStrategicLabelOpacity('apex', phaseOpacity(elapsed, timeline.apexLabel));
 }

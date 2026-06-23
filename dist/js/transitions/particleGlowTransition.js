@@ -12,6 +12,10 @@ import { resetParticleCloudColors } from '../scene/particlePyramid.js';
 import { applyPyramidColorAndBrightness } from '../ui/pyramidControls.js';
 import { applyAxisMaterial, applyAxisRevealWeight } from '../ui/axisControls.js';
 import {
+  applyBaseCornerConeRevealWeight,
+  resetBaseCornerConesReveal
+} from '../scene/baseCornerCones.js';
+import {
   isEffectTransitioning,
   restoreGlowObjectVisibility
 } from './glowWireframeTransition.js';
@@ -150,6 +154,7 @@ function setGlowMaterializeWeight(progress) {
   applyPhysical(mats.solid, 1, getFootEmissiveIntensity(), coreT);
   applyPhysical(mats.base, 1, getFootEmissiveIntensity(), coreT);
   applyAxisRevealWeight(coreT > 0.004 ? 1 : 0, { opacityFade: false });
+  applyBaseCornerConeRevealWeight(coreT > 0.004 ? 1 : 0, { opacityFade: false });
 
   applyPhysical(mats.shell, getShellOpacity(), getShellEmissiveIntensity(), shellT);
 
@@ -192,6 +197,14 @@ function syncGlowMaterializeVisibility(coreT, shellT, sliceT, decorT) {
     mesh.visible = true;
   });
   if (objects.axisShaft) objects.axisShaft.visible = showAxis;
+  if (objects.baseCornerCones) {
+    objects.baseCornerCones.group.visible = showAxis;
+    objects.baseCornerCones.corners.forEach(({ group, mesh }) => {
+      group.visible = showAxis;
+      group.scale.y = showAxis ? 1 : 0.001;
+      if (mesh) mesh.visible = showAxis;
+    });
+  }
 
   const showSliceLines = sliceT > GLOW_SLICE_LINES_SHOW;
   objects.sliceEdgeLines.forEach((line) => {
@@ -266,6 +279,7 @@ function finishTransition() {
 
   restoreGlowMaterialFlags();
   restoreGlowObjectVisibility();
+  resetBaseCornerConesReveal();
   applyPyramidColorAndBrightness();
   applyAxisMaterial();
 }

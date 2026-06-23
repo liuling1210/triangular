@@ -9,6 +9,7 @@ import {
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import { getSliceVertices, radiusAtHeight } from '../utils/geometry.js';
+import { createBaseCornerConesWireframe } from './baseCornerCones.js';
 
 function addWireframeMesh(parent, geo, mat, positionY, renderOrder) {
   const wireGeo = new THREE.WireframeGeometry(geo);
@@ -82,4 +83,6 @@ export function createWireframePyramid(parent, apex, baseVerts, sliceHeights) {
     const sv = getSliceVertices(baseVerts, y);
     addTriangleEdges(parent, sv[0], sv[1], sv[2], sliceMat, RENDER_ORDER.sliceEdge);
   });
+
+  createBaseCornerConesWireframe(parent, baseVerts, edgeMat);
 }

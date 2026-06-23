@@ -1,3 +1,6 @@
+/** 屏幕取色与 WebGL 像素采样工具 */
+
+/** 将 RGB 通道值转为 #rrggbb 字符串 */
 export function rgbToHex(r, g, b) {
   const toHex = (channel) => channel.toString(16).padStart(2, '0');
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
@@ -30,10 +33,12 @@ export function sampleRendererColorAtClientPoint(renderer, clientX, clientY) {
   return rgbToHex(pixels[0], pixels[1], pixels[2]);
 }
 
+/** 检测浏览器是否支持 EyeDropper API */
 export function isEyeDropperSupported() {
   return typeof window.EyeDropper === 'function';
 }
 
+/** 调用系统取色器，返回选中像素的 sRGB 十六进制颜色 */
 export async function pickColorFromScreen() {
   if (!isEyeDropperSupported()) {
     return null;

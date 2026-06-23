@@ -1,9 +1,11 @@
+/** 三棱锥场景灯光组：环境光、主辅光与轴心点光 */
 import {
   DEFAULT_PYRAMID_COLOR,
   DEFAULT_AXIS_SETTINGS
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 
+/** 向场景添加环境光、方向光与轴心/核心点光并写入 state */
 export function setupLights() {
   const settings = state.glowLightSettings;
   const ambient = new THREE.AmbientLight(0x1a1208, settings.ambientIntensity);

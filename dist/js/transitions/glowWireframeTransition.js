@@ -10,6 +10,7 @@ import {
 } from '../ui/edgeFlowControls.js';
 import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
 import { applyAxisRevealWeight } from '../ui/axisControls.js';
+import { applyBaseCornerConeRevealWeight, resetBaseCornerConesReveal } from '../scene/baseCornerCones.js';
 import { getFootEmissiveIntensity } from '../ui/footControls.js';
 import { getShellEmissiveIntensity, getShellOpacity } from '../ui/shellControls.js';
 
@@ -58,6 +59,7 @@ export function restoreGlowObjectVisibility() {
     mesh.visible = true;
   });
   glow.visible = true;
+  resetBaseCornerConesReveal();
 }
 
 function setGlowVisualWeight(w) {
@@ -80,6 +82,7 @@ function setGlowVisualWeight(w) {
   applyPhysical(mats.shell, getShellOpacity(), getShellEmissiveIntensity());
   applyPhysical(mats.base, 1, getFootEmissiveIntensity());
   applyAxisRevealWeight(weight, { opacityFade: true });
+  applyBaseCornerConeRevealWeight(weight, { opacityFade: true });
 
   if (mats.planes) {
     mats.planes.forEach((mat) => {

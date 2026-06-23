@@ -15,10 +15,17 @@ import {
   getTriangleCentroid,
   radiusAtHeight
 } from '../utils/geometry.js';
+import {
+  sampleBaseCornerConeParticles,
+  computeCornerConeParticleReveal
+} from './baseCornerCones.js';
 
 const SHAFT_TOP = SHAFT_CYL_HEIGHT + SHAFT_TIP_HEIGHT;
 
-function computeParticleReveal(x, y, z) {
+function computeParticleReveal(x, y, z, baseVerts) {
+  const cornerReveal = computeCornerConeParticleReveal(x, y, z, baseVerts);
+  if (cornerReveal != null) return cornerReveal;
+
   const r = Math.sqrt(x * x + z * z);
 
   if (y <= SHAFT_TOP && r <= SHAFT_RADIUS * 1.6) {
@@ -113,13 +120,20 @@ export function createParticlePyramid(parent, apex, baseVerts, sliceHeights) {
     positions.push(rad * Math.cos(angle), yCoord, rad * Math.sin(angle));
   }
 
+  sampleBaseCornerConeParticles(baseVerts, positions);
+
   const count = positions.length / 3;
   const reveals = new Float32Array(count);
   const colors = new Float32Array(count * 3);
 
   for (let i = 0; i < count; i++) {
     const i3 = i * 3;
-    reveals[i] = computeParticleReveal(positions[i3], positions[i3 + 1], positions[i3 + 2]);
+    reveals[i] = computeParticleReveal(
+      positions[i3],
+      positions[i3 + 1],
+      positions[i3 + 2],
+      baseVerts
+    );
     colors[i3] = 1;
     colors[i3 + 1] = 1;
     colors[i3 + 2] = 1;

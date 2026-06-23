@@ -1,8 +1,10 @@
+/** 线框模式到粒子模式的过渡动画 */
 import {
   PYRAMID_EFFECT_MODES
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import { getFullBloomStrength } from '../utils/viewAdaptation.js';
+import { clamp01, lerp, smootherstep } from '../utils/math.js';
 import { resetParticleCloudColors } from '../scene/particlePyramid.js';
 import { applyPyramidColorAndBrightness } from '../ui/pyramidControls.js';
 import { isEffectTransitioning } from './glowWireframeTransition.js';
@@ -24,23 +26,12 @@ const REVEAL_THRESHOLD_SPAN = 0.55;
 const REVEAL_THRESHOLD_BASE = 0.08;
 const REVEAL_FADE_SPAN = 0.22;
 
-function clamp01(v) {
-  return Math.max(0, Math.min(1, v));
-}
-
-function lerp(a, b, t) {
-  return a + (b - a) * t;
-}
-
-function smootherstep(t) {
-  t = clamp01(t);
-  return t * t * t * (t * (t * 6 - 15) + 10);
-}
-
+/** 计算分层淡出权重 */
 function layerFadeOut(progress, delay, span) {
   return 1 - smootherstep(clamp01((progress - delay) / span));
 }
 
+/** 恢复线框材质到默认状态 */
 function restoreWireframeMaterials() {
   const wireMats = state.pyramidMats.wireframe;
   if (!wireMats || wireMats.length < 3) return;
@@ -54,6 +45,7 @@ function restoreWireframeMaterials() {
   state.pyramidGroups.wireframe.scale.setScalar(1);
 }
 
+/** 按进度更新线框溶解效果 */
 function setWireframeDissolveWeight(progress) {
   const wireMats = state.pyramidMats.wireframe;
   if (!wireMats || wireMats.length < 3) return;
@@ -84,6 +76,7 @@ function setWireframeDissolveWeight(progress) {
   state.pyramidGroups.wireframe.scale.setScalar(scale);
 }
 
+/** 按进度更新粒子云的逐点显影效果 */
 function setParticleRevealWeight(progress) {
   const geo = state.particleCloudGeo;
   const mat = state.pyramidMats.particleCloud;
@@ -111,6 +104,7 @@ function setParticleRevealWeight(progress) {
   geo.attributes.color.needsUpdate = true;
 }
 
+/** 过渡过程中更新 Bloom 强度曲线 */
 function applyBloomForTransition(progress) {
   if (!state.bloomPass) return;
   const fullBloom = getFullBloomStrength();
@@ -123,6 +117,7 @@ function applyBloomForTransition(progress) {
   state.bloomPass.strength = startBloom;
 }
 
+/** 完成过渡并切换到粒子模式 */
 function finishTransition() {
   state.pyramidEffectMode = PYRAMID_EFFECT_MODES.PARTICLES;
   state.effectTransition = null;
@@ -144,6 +139,7 @@ function finishTransition() {
   applyPyramidColorAndBrightness();
 }
 
+/** 启动线框到粒子的过渡动画 */
 export function startWireParticleTransition() {
   if (isEffectTransitioning()) return;
   if (state.pyramidEffectMode !== PYRAMID_EFFECT_MODES.WIREFRAME) return;
@@ -177,6 +173,7 @@ export function startWireParticleTransition() {
   };
 }
 
+/** 每帧更新线框到粒子的过渡进度 */
 export function updateWireParticleTransition() {
   const tr = state.effectTransition;
   if (!tr?.active || tr.kind !== 'wireParticle' || !state.clock) return;

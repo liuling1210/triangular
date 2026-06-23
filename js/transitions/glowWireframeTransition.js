@@ -1,8 +1,10 @@
+/** 发光模式到线框模式的过渡动画 */
 import {
   PYRAMID_EFFECT_MODES
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import { getFullBloomStrength } from '../utils/viewAdaptation.js';
+import { clamp01, lerp, smootherstep } from '../utils/math.js';
 import {
   getEdgeFlowOpacity,
   getEdgeFlowOuterIntensity,
@@ -10,6 +12,7 @@ import {
 } from '../ui/edgeFlowControls.js';
 import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
 import { applyAxisRevealWeight } from '../ui/axisControls.js';
+import { applyBaseCornerConeRevealWeight, resetBaseCornerConesReveal } from '../scene/baseCornerCones.js';
 import { getFootEmissiveIntensity } from '../ui/footControls.js';
 import { getShellEmissiveIntensity, getShellOpacity } from '../ui/shellControls.js';
 
@@ -21,27 +24,17 @@ const GLOW_LINE_HIDE_WIRE = 0.06;
 const GLOW_MESH_HIDE = 0.015;
 const GLOW_GROUP_HIDE = 0.006;
 
-function clamp01(v) {
-  return Math.max(0, Math.min(1, v));
-}
-
-function lerp(a, b, t) {
-  return a + (b - a) * t;
-}
-
-function smootherstep(t) {
-  t = clamp01(t);
-  return t * t * t * (t * (t * 6 - 15) + 10);
-}
-
+/** 计算发光层淡出权重 */
 function glowFadeOut(progress) {
   return 1 - smootherstep(progress);
 }
 
+/** 计算线框层淡入权重 */
 function wireFadeIn(progress, delay = 0.14, span = 0.86) {
   return smootherstep(clamp01((progress - delay) / span));
 }
 
+/** 恢复发光物体各子元素的可见性 */
 export function restoreGlowObjectVisibility() {
   const objects = state.glowObjects;
   const glow = state.pyramidGroups.glow;
@@ -58,8 +51,10 @@ export function restoreGlowObjectVisibility() {
     mesh.visible = true;
   });
   glow.visible = true;
+  resetBaseCornerConesReveal();
 }
 
+/** 按权重设置发光模式的视觉参数 */
 function setGlowVisualWeight(w) {
   const mats = state.pyramidMats;
   const weight = clamp01(w);
@@ -80,6 +75,7 @@ function setGlowVisualWeight(w) {
   applyPhysical(mats.shell, getShellOpacity(), getShellEmissiveIntensity());
   applyPhysical(mats.base, 1, getFootEmissiveIntensity());
   applyAxisRevealWeight(weight, { opacityFade: true });
+  applyBaseCornerConeRevealWeight(weight, { opacityFade: true });
 
   if (mats.planes) {
     mats.planes.forEach((mat) => {
@@ -106,6 +102,7 @@ function setGlowVisualWeight(w) {
   });
 }
 
+/** 按权重设置线框模式的视觉参数 */
 function setWireframeVisualWeight(t) {
   const wireMats = state.pyramidMats.wireframe;
   if (!wireMats || wireMats.length < 3) return;
@@ -133,6 +130,7 @@ function setWireframeVisualWeight(t) {
   state.pyramidGroups.wireframe.scale.setScalar(scale);
 }
 
+/** 过渡过程中插值 Bloom 强度 */
 function applyBloomForTransition(progress) {
   if (!state.bloomPass) return;
   const fullBloom = getFullBloomStrength();
@@ -140,6 +138,7 @@ function applyBloomForTransition(progress) {
   state.bloomPass.strength = lerp(fullBloom, wireBloom, smootherstep(progress));
 }
 
+/** 根据过渡进度同步发光与线框的可见性 */
 function syncGlowToWireVisibility(glowWeight, wireWeight) {
   const objects = state.glowObjects;
   const glow = state.pyramidGroups.glow;
@@ -162,6 +161,7 @@ function syncGlowToWireVisibility(glowWeight, wireWeight) {
   glow.visible = glowWeight > GLOW_GROUP_HIDE;
 }
 
+/** 完成过渡并切换到线框模式 */
 function finishTransition() {
   state.pyramidEffectMode = PYRAMID_EFFECT_MODES.WIREFRAME;
   state.effectTransition = null;
@@ -175,10 +175,12 @@ function finishTransition() {
   applyBloomForTransition(1);
 }
 
+/** 判断是否正在进行效果过渡 */
 export function isEffectTransitioning() {
   return Boolean(state.effectTransition?.active);
 }
 
+/** 启动发光到线框的过渡动画 */
 export function startGlowWireTransition() {
   if (isEffectTransitioning()) return;
   if (state.pyramidEffectMode !== PYRAMID_EFFECT_MODES.GLOW) return;
@@ -205,6 +207,7 @@ export function startGlowWireTransition() {
   };
 }
 
+/** 每帧更新发光到线框的过渡进度 */
 export function updateGlowWireTransition() {
   const tr = state.effectTransition;
   if (!tr?.active || tr.kind !== 'glowWire' || !state.clock) return;

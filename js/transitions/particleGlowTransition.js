@@ -1,8 +1,10 @@
+/** 粒子模式到发光模式的过渡动画 */
 import {
   PYRAMID_EFFECT_MODES
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import { getFullBloomStrength } from '../utils/viewAdaptation.js';
+import { clamp01, lerp, smootherstep } from '../utils/math.js';
 import {
   getEdgeFlowOpacity,
   getEdgeFlowOuterIntensity,
@@ -12,6 +14,10 @@ import { resetParticleCloudColors } from '../scene/particlePyramid.js';
 import { applyPyramidColorAndBrightness } from '../ui/pyramidControls.js';
 import { applyAxisMaterial, applyAxisRevealWeight } from '../ui/axisControls.js';
 import {
+  applyBaseCornerConeRevealWeight,
+  resetBaseCornerConesReveal
+} from '../scene/baseCornerCones.js';
+import {
   isEffectTransitioning,
   restoreGlowObjectVisibility
 } from './glowWireframeTransition.js';
@@ -19,7 +25,6 @@ import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
 import { getFootEmissiveIntensity } from '../ui/footControls.js';
 import { getShellEmissiveIntensity, getShellOpacity } from '../ui/shellControls.js';
 
-// 显影 → 凝聚 → 定型
 const DURATION = 2.1;
 const SETTLE_DURATION = 0.3;
 
@@ -43,6 +48,7 @@ const GLOW_SLICE_LINES_SHOW = 0.05;
 const BLOOM_PEAK_RATIO = 1.06;
 const BLOOM_SETTLE_START = 0.78;
 
+/** 计算装饰元素随过渡进度的运动权重 */
 function computeDecorMotionWeight(progress) {
   if (progress < 0.22) {
     return lerp(0, 0.15, smootherstep(progress / 0.22));
@@ -56,32 +62,23 @@ function computeDecorMotionWeight(progress) {
   return lerp(0.88, 1, smootherstep((progress - 0.82) / 0.18));
 }
 
-function clamp01(v) {
-  return Math.max(0, Math.min(1, v));
-}
-
-function lerp(a, b, t) {
-  return a + (b - a) * t;
-}
-
-function smootherstep(t) {
-  t = clamp01(t);
-  return t * t * t * (t * (t * 6 - 15) + 10);
-}
-
+/** 计算分层淡入权重 */
 function layerFadeIn(progress, delay, span) {
   return smootherstep(clamp01((progress - delay) / span));
 }
 
+/** 计算溶解阶段的归一化进度 */
 function dissolveProgressAt(progress) {
   return clamp01((progress - DISSOLVE_START) / DISSOLVE_SPAN);
 }
 
+/** 计算粒子组末尾的软淡出系数 */
 function softGroupFade(progress) {
   if (progress <= SOFT_FADE_START) return 1;
   return 1 - smootherstep((progress - SOFT_FADE_START) / (1 - SOFT_FADE_START));
 }
 
+/** 按进度更新粒子云的溶解与显影效果 */
 function setParticleDissolveWeight(progress) {
   const geo = state.particleCloudGeo;
   const mat = state.pyramidMats.particleCloud;
@@ -124,6 +121,7 @@ function setParticleDissolveWeight(progress) {
   geo.attributes.color.needsUpdate = true;
 }
 
+/** 按进度更新发光模式的逐层凝聚效果 */
 function setGlowMaterializeWeight(progress) {
   const mats = state.pyramidMats;
   const brightness = state.pyramidBrightness;
@@ -150,6 +148,7 @@ function setGlowMaterializeWeight(progress) {
   applyPhysical(mats.solid, 1, getFootEmissiveIntensity(), coreT);
   applyPhysical(mats.base, 1, getFootEmissiveIntensity(), coreT);
   applyAxisRevealWeight(coreT > 0.004 ? 1 : 0, { opacityFade: false });
+  applyBaseCornerConeRevealWeight(coreT > 0.004 ? 1 : 0, { opacityFade: false });
 
   applyPhysical(mats.shell, getShellOpacity(), getShellEmissiveIntensity(), shellT);
 
@@ -180,6 +179,7 @@ function setGlowMaterializeWeight(progress) {
   syncGlowMaterializeVisibility(coreT, shellT, sliceT, decorT);
 }
 
+/** 同步发光凝聚过程中各子元素的可见性 */
 function syncGlowMaterializeVisibility(coreT, shellT, sliceT, decorT) {
   const objects = state.glowObjects;
   const glow = state.pyramidGroups.glow;
@@ -192,6 +192,14 @@ function syncGlowMaterializeVisibility(coreT, shellT, sliceT, decorT) {
     mesh.visible = true;
   });
   if (objects.axisShaft) objects.axisShaft.visible = showAxis;
+  if (objects.baseCornerCones) {
+    objects.baseCornerCones.group.visible = showAxis;
+    objects.baseCornerCones.corners.forEach(({ group, mesh }) => {
+      group.visible = showAxis;
+      group.scale.y = showAxis ? 1 : 0.001;
+      if (mesh) mesh.visible = showAxis;
+    });
+  }
 
   const showSliceLines = sliceT > GLOW_SLICE_LINES_SHOW;
   objects.sliceEdgeLines.forEach((line) => {
@@ -205,6 +213,7 @@ function syncGlowMaterializeVisibility(coreT, shellT, sliceT, decorT) {
   if (objects.edgeGlowTubes) objects.edgeGlowTubes.tubeGroup.visible = showDecor;
 }
 
+/** 过渡过程中更新 Bloom 强度曲线 */
 function applyBloomForTransition(progress) {
   if (!state.bloomPass) return;
   const fullBloom = getFullBloomStrength();
@@ -224,6 +233,7 @@ function applyBloomForTransition(progress) {
   state.bloomPass.strength = lerp(peakBloom, fullBloom, settleT);
 }
 
+/** 过渡结束后的收尾淡出阶段 */
 function applySettlePhase(settleT) {
   const mat = state.pyramidMats.particleCloud;
   if (mat) {
@@ -236,6 +246,7 @@ function applySettlePhase(settleT) {
   }
 }
 
+/** 恢复发光物理材质的不透明标志 */
 function restoreGlowMaterialFlags() {
   const mats = state.pyramidMats;
   if (mats.solid) {
@@ -248,6 +259,7 @@ function restoreGlowMaterialFlags() {
   }
 }
 
+/** 完成过渡并切换到发光模式 */
 function finishTransition() {
   state.pyramidEffectMode = PYRAMID_EFFECT_MODES.GLOW;
   state.effectTransition = null;
@@ -266,10 +278,12 @@ function finishTransition() {
 
   restoreGlowMaterialFlags();
   restoreGlowObjectVisibility();
+  resetBaseCornerConesReveal();
   applyPyramidColorAndBrightness();
   applyAxisMaterial();
 }
 
+/** 启动粒子到发光的过渡动画 */
 export function startParticleGlowTransition() {
   if (isEffectTransitioning()) return;
   if (state.pyramidEffectMode !== PYRAMID_EFFECT_MODES.PARTICLES) return;
@@ -303,6 +317,7 @@ export function startParticleGlowTransition() {
   };
 }
 
+/** 每帧更新粒子到发光的过渡进度 */
 export function updateParticleGlowTransition() {
   const tr = state.effectTransition;
   if (!tr?.active || tr.kind !== 'particleGlow' || !state.clock) return;

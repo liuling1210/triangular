@@ -1,3 +1,4 @@
+/** 金字塔全局颜色与亮度 UI 控制 */
 import { state } from '../state/appState.js';
 import {
   getMotionGoldWeightForMode
@@ -9,6 +10,7 @@ import { applyMotionParticleAppearance } from './motionParticleControls.js';
 import { applyShellMaterial } from './shellControls.js';
 import { applySliceGradients } from './sliceControls.js';
 
+/** 应用金字塔主题色与亮度到各子系统 */
 export function applyPyramidColorAndBrightness() {
   const threeColor = new THREE.Color(state.pyramidColorHex);
   const { pyramidMats, pyramidLights } = state;
@@ -50,6 +52,7 @@ export function applyPyramidColorAndBrightness() {
   document.getElementById('brightness-val').textContent = `${Math.round(state.pyramidBrightness * 100)}%`;
 }
 
+/** 绑定金字塔颜色与亮度控制面板事件 */
 export function setupColorBrightnessUI(onBrightnessChange) {
   document.getElementById('pyramid-color-picker').addEventListener('input', (e) => {
     state.pyramidColorHex = e.target.value;

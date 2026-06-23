@@ -71,7 +71,7 @@ function animate() {
   updateViewAdaptation();
   updateGlitchBackground();
   state.composer.render();
-  if (SHOW_LABELS || state.baseCornerMarkers.length) {
+  if (SHOW_LABELS) {
     state.labelRenderer.render(state.scene, state.camera);
   }
 }
@@ -80,20 +80,24 @@ function init() {
   const container = document.getElementById('canvas-container');
 
   state.scene = new THREE.Scene();
-  state.scene.background = new THREE.Color(0x000000);
   state.scene.fog = new THREE.FogExp2(0x000000, 0.045);
+  createGlitchBackground(state.scene);
 
   state.camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
 
   state.renderer = new THREE.WebGLRenderer({ antialias: true });
   state.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   state.renderer.setSize(window.innerWidth, window.innerHeight);
+  state.renderer.setClearColor(0x000000, 1);
   state.renderer.toneMapping = THREE.ACESFilmicToneMapping;
   state.renderer.toneMappingExposure = 1.2;
-  container.appendChild(state.renderer.domElement);
+  const canvas = state.renderer.domElement;
+  canvas.classList.add('webgl-layer');
+  container.appendChild(canvas);
 
   state.labelRenderer = new THREE.CSS2DRenderer();
   state.labelRenderer.setSize(window.innerWidth, window.innerHeight);
+  state.labelRenderer.domElement.classList.add('label-layer');
   state.labelRenderer.domElement.style.position = 'absolute';
   state.labelRenderer.domElement.style.top = '0';
   state.labelRenderer.domElement.style.left = '0';
@@ -102,7 +106,6 @@ function init() {
 
   createPyramid();
   createCircularGrid();
-  createGlitchBackground(container);
   if (SHOW_LABELS) createLabels();
   setupLights();
   setupPostProcessing();

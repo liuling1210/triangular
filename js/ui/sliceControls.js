@@ -1,6 +1,8 @@
+/** 切片渐变与透明度 UI 控制 */
 import { state } from '../state/appState.js';
 import { hexToRgba } from '../utils/color.js';
 
+/** 应用切片渐变与边缘材质到场景 */
 export function applySliceGradients() {
   if (!state.pyramidMats.planes) return;
   const intensity = 0.75 + state.pyramidBrightness * 0.55;
@@ -37,6 +39,7 @@ export function applySliceGradients() {
   updateSliceGradientPreviews();
 }
 
+/** 更新切片渐变预览与透明度 UI 标签 */
 function updateSliceGradientPreviews() {
   state.sliceGradients.forEach((grad, i) => {
     const preview = document.querySelector(`.gradient-preview[data-slice="${i}"]`);
@@ -67,6 +70,7 @@ function updateSliceGradientPreviews() {
   }
 }
 
+/** 绑定切片渐变与透明度控制面板事件 */
 export function setupSliceGradientUI() {
   document.querySelectorAll('.slice-color-picker').forEach((picker) => {
     picker.addEventListener('input', (e) => {

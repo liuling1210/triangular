@@ -1,3 +1,4 @@
+/** 金字塔效果模式切换 */
 import { PYRAMID_EFFECT_MODES } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import {
@@ -12,6 +13,7 @@ import {
 
 const WIREFRAME_BLOOM_RATIO = 0.38;
 
+/** 立即切换到指定效果模式（无过渡动画） */
 export function setPyramidEffect(mode) {
   const { glow, wireframe, particles } = state.pyramidGroups;
   if (!glow || !wireframe || !particles) return;

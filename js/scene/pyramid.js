@@ -1,3 +1,4 @@
+/** 三棱锥主场景：实体壳体、切片、轴、边流与内部运动粒子 */
 import {
   DEFAULT_PYRAMID_COLOR,
   DEFAULT_AXIS_SETTINGS,
@@ -32,10 +33,11 @@ import { createAxisPhysicalMaterial } from '../materials/axisMaterial.js';
 import { createWireframePyramid } from './wireframePyramid.js';
 import { createParticlePyramid } from './particlePyramid.js';
 import { createEdgeGlowTubes } from './edgeGlowTubes.js';
-import { createBaseCornerMarkers } from './baseCornerMarkers.js';
+import { createBaseCornerCones } from './baseCornerCones.js';
 import { createStrategicLabels } from './strategicLabels.js';
 import { getMotionParticleRiseSpeed, getMotionParticleCountMultiplier } from '../utils/motionParticleSettings.js';
 
+/** 将粒子位置编码为极角、归一化半径与相位，供上升动画使用 */
 function encodeParticleStream(x, y, z, phase) {
   const angle = Math.atan2(z, x);
   const r = Math.sqrt(x * x + z * z);
@@ -43,15 +45,18 @@ function encodeParticleStream(x, y, z, phase) {
   return { angle, radialNorm: Math.min(r / maxR, 1), phase };
 }
 
+/** 按倍率缩放粒子基准数量并保证至少为 1 */
 function scaleParticleCount(base, multiplier) {
   return Math.max(1, Math.round(base * multiplier));
 }
 
+/** 在 flow 组内创建内部上升运动粒子云 */
 function createInternalParticles(group, apex, baseVerts, sliceHeights, countMultiplier = 1) {
   const counts = MOTION_PARTICLE_BASE_COUNTS;
   const particles = [];
   const streams = [];
 
+  /** 追加单个粒子坐标及其流编码 */
   function addParticle(x, y, z) {
     particles.push(x, y, z);
     streams.push(encodeParticleStream(x, y, z, Math.random()));
@@ -118,6 +123,7 @@ function createInternalParticles(group, apex, baseVerts, sliceHeights, countMult
   return internalPoints;
 }
 
+/** 按当前数量倍率重建内部运动粒子云 */
 export function rebuildInternalParticles() {
   const flowGroup = state.pyramidGroups.flow;
   if (!flowGroup || !state.pyramidApex || !state.pyramidBaseVerts) return;
@@ -141,6 +147,7 @@ export function rebuildInternalParticles() {
   );
 }
 
+/** 构建完整三棱锥场景（实体、切片、轴、边流、线框与粒子组） */
 export function createPyramid() {
   const pyramidRoot = new THREE.Group();
   state.pyramidRootGroup = pyramidRoot;
@@ -154,6 +161,7 @@ export function createPyramid() {
     edgeGlowTubes: null,
     internalPoints: null,
     axisShaft: null,
+    baseCornerCones: null,
     solidFrustum: null,
     solidBottomCap: null,
     solidTopCap: null,
@@ -176,7 +184,6 @@ export function createPyramid() {
   const { apex, baseVerts } = extractPyramidKeyPoints(coneGeo);
   state.pyramidApex = apex;
   state.pyramidBaseVerts = baseVerts.map((v) => v.clone());
-  createBaseCornerMarkers(baseVerts);
   createStrategicLabels();
   const sliceHeights = [H / 3, (2 * H) / 3];
   state.pyramidSliceHeights = sliceHeights;
@@ -332,6 +339,8 @@ export function createPyramid() {
 
   state.glowObjects.meshes.push(cylMesh, tipMesh);
 
+  state.glowObjects.baseCornerCones = createBaseCornerCones(glowGroup, baseVerts);
+
   const edgeGlow = createEdgeGlowTubes(glowGroup, apex, baseVerts);
   state.glowObjects.edgeGlowTubes = edgeGlow;
   state.pyramidMats.edgeFlowOuter = edgeGlow.outerMats;
@@ -348,6 +357,7 @@ export function createPyramid() {
   createParticlePyramid(particleGroup, apex, baseVerts, sliceHeights);
 }
 
+/** 更新棱边流光 Shader 的 uTime  uniform */
 export function updateEdgeFlow(elapsed) {
   const { edgeFlowOuter, edgeFlowInner } = state.pyramidMats;
   edgeFlowOuter?.forEach((mat) => {
@@ -358,7 +368,8 @@ export function updateEdgeFlow(elapsed) {
   });
 }
 
-export function syncParticleFlowClock() {
+/** 初始化或读取粒子流时钟基准时间 */
+function syncParticleFlowClock() {
   const now = state.clock.getElapsedTime();
   if (state.particleFlowElapsed == null) {
     state.particleFlowElapsed = now;
@@ -369,6 +380,7 @@ export function syncParticleFlowClock() {
   return now;
 }
 
+/** 按速度倍率推进粒子流时钟并返回累计 elapsed */
 export function advanceParticleFlowClock(speedScale = 1) {
   const now = syncParticleFlowClock();
   const delta = now - state.particleFlowLastUpdate;
@@ -377,10 +389,7 @@ export function advanceParticleFlowClock(speedScale = 1) {
   return state.particleFlowElapsed;
 }
 
-export function stampParticleFlowClock() {
-  state.particleFlowLastUpdate = state.clock.getElapsedTime();
-}
-
+/** 根据 elapsed 更新内部粒子的上升位置与颜色衰减 */
 export function updateParticleFlow(elapsed) {
   const riseSpeed = getMotionParticleRiseSpeed();
 

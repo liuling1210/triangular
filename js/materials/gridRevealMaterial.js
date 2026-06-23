@@ -1,9 +1,12 @@
+/** 极坐标网格揭示 ShaderMaterial 及外圈扫掠/内圈半径/透明度控制 */
 import { GRID, GRID_MAX_RINGS, getGridRingRadii, syncGridDerivedSettings } from '../config/constants.js';
 import { state } from '../state/appState.js';
+import { clamp01, smootherstep } from '../utils/math.js';
 
 const TAU = Math.PI * 2;
 const GRID_REVEAL_DASHED_OPACITY = 0.6;
 
+/** 将环半径数组与计数同步到网格揭示材质的 uniform */
 function syncRingRadiusUniforms(material, settings) {
   syncGridDerivedSettings(settings);
   const radii = getGridRingRadii(settings);
@@ -19,6 +22,7 @@ function syncRingRadiusUniforms(material, settings) {
   material.uniforms.uMaxRadius.value = outer;
 }
 
+/** 创建极坐标网格揭示 ShaderMaterial，支持外圈扫掠与内圈半径动画 */
 export function createGridRevealMaterial(startAngle = 0) {
   const color = new THREE.Color(GRID.color);
   const settings = state.gridSettings;
@@ -162,12 +166,14 @@ export function createGridRevealMaterial(startAngle = 0) {
   return material;
 }
 
+/** 根据底面点方位计算网格揭示的起始角度 */
 export function getGridRevealStartAngle(baseVerts) {
   if (!baseVerts?.length) return 0;
   const v = baseVerts[0];
   return Math.atan2(v.x, v.z);
 }
 
+/** 将 gridSettings 中的径向数、线宽与亮度同步到揭示材质 */
 export function syncGridRevealUniforms(material) {
   if (!material?.uniforms) return;
   const s = state.gridSettings;
@@ -177,20 +183,17 @@ export function syncGridRevealUniforms(material) {
   syncRingRadiusUniforms(material, s);
 }
 
+/** 设置外圈轮廓扫掠进度（0–1 映射为扫掠角） */
 export function setGridRevealOuterSweep(material, contourProgress) {
   if (!material?.uniforms) return;
   material.uniforms.uOuterRingSweepAngle.value = clamp01(contourProgress) * TAU;
   material.uniforms.uOuterRingSolidMix.value = 0;
 }
 
-function smootherstep(t) {
-  t = clamp01(t);
-  return t * t * t * (t * (t * 6 - 15) + 10);
-}
-
 /** 内圈揭示抵达外圈时，外圈由虚线渐变为实线 */
 const OUTER_RING_SOLID_START = 0.9;
 
+/** 设置内圈揭示半径进度，并驱动外圈实线混合 */
 export function setGridRevealInnerRadius(material, innerProgress) {
   if (!material?.uniforms) return;
   syncGridDerivedSettings(state.gridSettings);
@@ -207,19 +210,11 @@ export function setGridRevealInnerRadius(material, innerProgress) {
   material.uniforms.uOuterRingSolidMix.value = solidT;
 }
 
-/** @deprecated use setGridRevealOuterSweep */
-export function setGridRevealSweep(material, contourProgress) {
-  setGridRevealOuterSweep(material, contourProgress);
-}
-
+/** 设置揭示材质整体透明度，可选同步 solid 网格材质 opacity */
 export function setGridRevealFade(material, revealOpacity, solidFade = null) {
   if (!material?.uniforms) return;
   material.uniforms.uRevealOpacity.value = revealOpacity;
   if (solidFade !== null && state.gridMaterial) {
     state.gridMaterial.opacity = state.gridSettings.brightness * solidFade;
   }
-}
-
-function clamp01(v) {
-  return Math.max(0, Math.min(1, v));
 }

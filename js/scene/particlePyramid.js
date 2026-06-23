@@ -1,3 +1,4 @@
+/** 粒子云三棱锥：体素/面/底角采样与 reveal 权重 */
 import {
   PARTICLE_EFFECT_COLOR,
   RENDER_ORDER,
@@ -15,10 +16,18 @@ import {
   getTriangleCentroid,
   radiusAtHeight
 } from '../utils/geometry.js';
+import {
+  sampleBaseCornerConeParticles,
+  computeCornerConeParticleReveal
+} from './baseCornerCones.js';
 
 const SHAFT_TOP = SHAFT_CYL_HEIGHT + SHAFT_TIP_HEIGHT;
 
-function computeParticleReveal(x, y, z) {
+/** 根据位置计算粒子 reveal 阈值（底角柱、中心轴、壳体由外向内） */
+function computeParticleReveal(x, y, z, baseVerts) {
+  const cornerReveal = computeCornerConeParticleReveal(x, y, z, baseVerts);
+  if (cornerReveal != null) return cornerReveal;
+
   const r = Math.sqrt(x * x + z * z);
 
   if (y <= SHAFT_TOP && r <= SHAFT_RADIUS * 1.6) {
@@ -33,6 +42,7 @@ function computeParticleReveal(x, y, z) {
   return 1 - radialNorm;
 }
 
+/** 在三角形内采样并将坐标追加到 positions 数组 */
 function sampleToPositions(A, B, C, count, positions) {
   const batch = [];
   sampleTriangle(A, B, C, count, batch);
@@ -41,6 +51,7 @@ function sampleToPositions(A, B, C, count, positions) {
   }
 }
 
+/** 构建粒子云几何（体素、面、切片、轴与底角采样）并加入父组 */
 export function createParticlePyramid(parent, apex, baseVerts, sliceHeights) {
   const positions = [];
 
@@ -113,13 +124,20 @@ export function createParticlePyramid(parent, apex, baseVerts, sliceHeights) {
     positions.push(rad * Math.cos(angle), yCoord, rad * Math.sin(angle));
   }
 
+  sampleBaseCornerConeParticles(baseVerts, positions);
+
   const count = positions.length / 3;
   const reveals = new Float32Array(count);
   const colors = new Float32Array(count * 3);
 
   for (let i = 0; i < count; i++) {
     const i3 = i * 3;
-    reveals[i] = computeParticleReveal(positions[i3], positions[i3 + 1], positions[i3 + 2]);
+    reveals[i] = computeParticleReveal(
+      positions[i3],
+      positions[i3 + 1],
+      positions[i3 + 2],
+      baseVerts
+    );
     colors[i3] = 1;
     colors[i3 + 1] = 1;
     colors[i3 + 2] = 1;
@@ -149,6 +167,7 @@ export function createParticlePyramid(parent, apex, baseVerts, sliceHeights) {
   parent.add(points);
 }
 
+/** 将粒子云顶点颜色重置为白色 */
 export function resetParticleCloudColors() {
   const geo = state.particleCloudGeo;
   if (!geo) return;

@@ -1,3 +1,4 @@
+/** 分层切片三角形的径向渐变 ShaderMaterial */
 import {
   SHAFT_RADIUS,
   SHAFT_CYL_HEIGHT,
@@ -5,6 +6,7 @@ import {
   SOLID_BOTTOM_HEIGHT
 } from '../config/constants.js';
 
+/** 创建带径向颜色/透明度渐变及中轴柱体裁剪的切片 ShaderMaterial */
 export function createGradientSliceMaterial(centroid, maxDist, grad, opacity) {
   return new THREE.ShaderMaterial({
     uniforms: {

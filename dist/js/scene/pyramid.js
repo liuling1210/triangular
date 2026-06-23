@@ -32,7 +32,7 @@ import { createAxisPhysicalMaterial } from '../materials/axisMaterial.js';
 import { createWireframePyramid } from './wireframePyramid.js';
 import { createParticlePyramid } from './particlePyramid.js';
 import { createEdgeGlowTubes } from './edgeGlowTubes.js';
-import { createBaseCornerMarkers } from './baseCornerMarkers.js';
+import { createBaseCornerCones } from './baseCornerCones.js';
 import { createStrategicLabels } from './strategicLabels.js';
 import { getMotionParticleRiseSpeed, getMotionParticleCountMultiplier } from '../utils/motionParticleSettings.js';
 
@@ -154,6 +154,7 @@ export function createPyramid() {
     edgeGlowTubes: null,
     internalPoints: null,
     axisShaft: null,
+    baseCornerCones: null,
     solidFrustum: null,
     solidBottomCap: null,
     solidTopCap: null,
@@ -176,7 +177,6 @@ export function createPyramid() {
   const { apex, baseVerts } = extractPyramidKeyPoints(coneGeo);
   state.pyramidApex = apex;
   state.pyramidBaseVerts = baseVerts.map((v) => v.clone());
-  createBaseCornerMarkers(baseVerts);
   createStrategicLabels();
   const sliceHeights = [H / 3, (2 * H) / 3];
   state.pyramidSliceHeights = sliceHeights;
@@ -331,6 +331,8 @@ export function createPyramid() {
   state.glowObjects.axisShaft = axisShaft;
 
   state.glowObjects.meshes.push(cylMesh, tipMesh);
+
+  state.glowObjects.baseCornerCones = createBaseCornerCones(glowGroup, baseVerts);
 
   const edgeGlow = createEdgeGlowTubes(glowGroup, apex, baseVerts);
   state.glowObjects.edgeGlowTubes = edgeGlow;

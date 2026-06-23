@@ -1,3 +1,6 @@
+/** 颜色与发光纹理工具 */
+
+/** 将十六进制颜色转为 CSS rgba 字符串 */
 export function hexToRgba(hex, alpha) {
   const c = new THREE.Color(hex);
   const r = Math.round(c.r * 255);
@@ -6,6 +9,7 @@ export function hexToRgba(hex, alpha) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+/** 生成径向渐变发光纹理，用于粒子与光晕 */
 export function createGlowTexture(hexColor, bright) {
   const threeColor = new THREE.Color(hexColor);
   const r = Math.round(threeColor.r * 255);

@@ -17,6 +17,7 @@ import {
   PYRAMID_EFFECT_MODES
 } from '../config/constants.js';
 
+/** 全局运行时状态容器，由 main.js 初始化后各模块共享读写 */
 export const state = {
   pyramidColorHex: DEFAULT_PYRAMID_COLOR,
   pyramidBrightness: DEFAULT_BRIGHTNESS,
@@ -53,8 +54,6 @@ export const state = {
   fxaaPass: null,
   labelElements: [],
   strategicLabels: [],
-  baseCornerMarkers: [],
-  showCornerMarkers: false,
   clock: null,
   pyramidApex: null,
   pyramidBaseVerts: null,

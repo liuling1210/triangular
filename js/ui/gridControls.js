@@ -1,6 +1,8 @@
+/** 圆形网格 UI 控制 */
 import { state } from '../state/appState.js';
 import { applyGridAppearance, rebuildCircularGrid } from '../scene/grid.js';
 
+/** 同步网格 UI 标签显示 */
 function syncGridLabels() {
   const s = state.gridSettings;
   document.getElementById('grid-line-width-val').textContent = s.lineWidth.toFixed(3);
@@ -9,21 +11,25 @@ function syncGridLabels() {
   document.getElementById('grid-radius-scale-val').textContent = `${Math.round(s.ringRadiusScale * 100)}%`;
 }
 
+/** 应用网格亮度设置 */
 function applyBrightness() {
   applyGridAppearance();
   syncGridLabels();
 }
 
+/** 应用网格线宽并重建几何 */
 function applyLineWidth() {
   rebuildCircularGrid();
   syncGridLabels();
 }
 
+/** 应用网格几何参数并重建 */
 function applyGridGeometry() {
   rebuildCircularGrid();
   syncGridLabels();
 }
 
+/** 绑定网格控制面板事件 */
 export function setupGridUI() {
   const s = state.gridSettings;
 

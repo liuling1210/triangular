@@ -1,5 +1,7 @@
+/** 圆形地面网格：实体线框、Shader 渐显与裁剪重建 */
 import { GRID, getGridRingRadii, syncGridDerivedSettings } from '../config/constants.js';
 import { state } from '../state/appState.js';
+import { clamp01, smootherstep } from '../utils/math.js';
 import {
   clipSegmentExteriorXZ,
   getGridClipTriangle,
@@ -20,10 +22,12 @@ const GRID_REVEAL_CROSSFADE = 0.45;
 const SEGMENT_AXIS = new THREE.Vector3(0, 0, 1);
 const EPS = 1e-5;
 
+/** 返回网格应挂载的父级 */
 function getGridParent() {
   return state.pyramidRootGroup ?? state.scene;
 }
 
+/** 创建实体网格线段的基础材质 */
 function createGridMaterial() {
   return new THREE.MeshBasicMaterial({
     color: GRID.color,
@@ -34,6 +38,7 @@ function createGridMaterial() {
   });
 }
 
+/** 在两点之间创建一条 Box 线段网格 */
 function createSegmentMesh(start, end, lineWidth, material) {
   const dir = new THREE.Vector3().subVectors(end, start);
   const length = dir.length();
@@ -48,6 +53,7 @@ function createSegmentMesh(start, end, lineWidth, material) {
   return mesh;
 }
 
+/** 创建指定半径的完整圆环（由多段 Box 拼接） */
 function createRingMesh(radius, lineWidth, material, segments = 96) {
   const group = new THREE.Group();
 
@@ -63,11 +69,13 @@ function createRingMesh(radius, lineWidth, material, segments = 96) {
   return group;
 }
 
+/** 创建从原点到指定角度的径向线段 */
 function createRadialMesh(radius, angle, lineWidth, material) {
   const end = new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
   return createSegmentMesh(new THREE.Vector3(0, 0, 0), end, lineWidth, material);
 }
 
+/** 释放实体网格组及其几何体 */
 function disposeGridGroup() {
   if (!state.gridGroup) return;
 
@@ -78,6 +86,7 @@ function disposeGridGroup() {
   state.gridGroup = null;
 }
 
+/** 释放 Shader 渐显网格组及其几何体与材质 */
 function disposeGridReveal() {
   if (!state.gridRevealGroup) return;
 
@@ -90,6 +99,7 @@ function disposeGridReveal() {
   state.gridRevealMaterial = null;
 }
 
+/** 创建经三角裁剪后的圆环线段集合 */
 function createClippedRingMeshes(radius, lineWidth, material, clipTriangle, segments = 96) {
   const meshes = [];
   const [v0, v1, v2] = clipTriangle;
@@ -110,6 +120,7 @@ function createClippedRingMeshes(radius, lineWidth, material, clipTriangle, segm
   return meshes;
 }
 
+/** 创建经三角裁剪后的径向线段（止于三角形边界） */
 function createClippedRadialMesh(maxRadius, angle, lineWidth, material, clipTriangle) {
   const [v0, v1, v2] = clipTriangle;
   const dir = new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
@@ -121,6 +132,7 @@ function createClippedRadialMesh(maxRadius, angle, lineWidth, material, clipTria
   return createSegmentMesh(start, end, lineWidth, material);
 }
 
+/** 向组内添加同心圆环与径向线（可选三角裁剪） */
 function buildGridMeshes(group, settings, clipTriangle = null) {
   const { maxRadius, radialCount, lineWidth } = settings;
   const material = state.gridMaterial;
@@ -145,6 +157,7 @@ function buildGridMeshes(group, settings, clipTriangle = null) {
   }
 }
 
+/** 同步实体网格与 Shader 渐显网格的亮度等外观参数 */
 export function applyGridAppearance() {
   if (!state.gridMaterial) return;
   state.gridMaterial.opacity = state.gridSettings.brightness;
@@ -153,11 +166,13 @@ export function applyGridAppearance() {
   }
 }
 
-export function setSolidGridVisible(visible) {
+/** 切换实体网格组的可见性 */
+function setSolidGridVisible(visible) {
   if (state.gridGroup) state.gridGroup.visible = visible;
 }
 
-export function createGridReveal(startAngle = 0) {
+/** 创建 Shader 渐显平面网格并写入 state */
+function createGridReveal(startAngle = 0) {
   disposeGridReveal();
   syncGridDerivedSettings(state.gridSettings);
 
@@ -181,19 +196,11 @@ export function createGridReveal(startAngle = 0) {
   state.gridRevealMaterial = material;
 }
 
+/** 初始入场：隐藏实体网格并启动 Shader 渐显 */
 export function beginGridRevealForInitial(startAngle) {
   setSolidGridVisible(false);
   if (state.gridMaterial) state.gridMaterial.opacity = 0;
   createGridReveal(startAngle);
-}
-
-function clamp01(v) {
-  return Math.max(0, Math.min(1, v));
-}
-
-function smootherstep(t) {
-  t = Math.max(0, Math.min(1, t));
-  return t * t * t * (t * (t * 6 - 15) + 10);
 }
 
 /** 阶段 A：最外圈随轮廓角度扫出 */
@@ -224,12 +231,14 @@ export function updateGridRevealInner(innerProgress, crossfadeElapsed = null) {
   }
 }
 
+/** 跳过 crossfade，直接完成渐显并显示实体网格 */
 export function finishGridReveal() {
   disposeGridReveal();
   setSolidGridVisible(true);
   applyGridAppearance();
 }
 
+/** 按当前设置重建实体圆形网格（含三角裁剪） */
 export function rebuildCircularGrid() {
   if (!state.scene) return;
   syncGridDerivedSettings(state.gridSettings);
@@ -251,6 +260,7 @@ export function rebuildCircularGrid() {
   state.gridGroup = gridGroup;
 }
 
+/** 初始化网格材质并首次构建圆形网格 */
 export function createCircularGrid() {
   state.gridMaterial = createGridMaterial();
   rebuildCircularGrid();

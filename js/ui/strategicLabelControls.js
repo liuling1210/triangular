@@ -1,3 +1,4 @@
+/** 战略标签位置与样式 UI 控制 */
 import {
   STRATEGIC_APEX_BG_RANGE,
   STRATEGIC_LABEL_FONT_SIZE_RANGE,
@@ -13,26 +14,32 @@ import {
 
 const AXES = ['x', 'y'];
 
+/** 格式化屏幕坐标百分比显示 */
 function formatScreenValue(value) {
   return `${value.toFixed(1)}%`;
 }
 
+/** 生成标签位置滑块 DOM id */
 function sliderId(key, axis) {
   return `strategic-label-${key}-${axis}-slider`;
 }
 
+/** 生成标签位置值显示 DOM id */
 function valueId(key, axis) {
   return `strategic-label-${key}-${axis}-val`;
 }
 
+/** 生成顶点背景位置滑块 DOM id */
 function apexBgSliderId(axis) {
   return `strategic-apex-bg-${axis}-slider`;
 }
 
+/** 生成顶点背景位置值显示 DOM id */
 function apexBgValueId(axis) {
   return `strategic-apex-bg-${axis}-val`;
 }
 
+/** 同步战略标签字号控件显示 */
 function syncFontSizeControl() {
   const slider = document.getElementById('strategic-label-font-size-slider');
   const label = document.getElementById('strategic-label-font-size-val');
@@ -40,6 +47,7 @@ function syncFontSizeControl() {
   if (label) label.textContent = `${state.strategicLabelFontSize}px`;
 }
 
+/** 同步顶点背景控件显示 */
 function syncApexBgControlValues() {
   const { width, position } = state.strategicApexBg;
   const widthSlider = document.getElementById('strategic-apex-bg-width-slider');
@@ -55,6 +63,7 @@ function syncApexBgControlValues() {
   });
 }
 
+/** 应用顶点背景宽度并更新 UI */
 function applyApexBgWidth(rawValue) {
   const range = STRATEGIC_APEX_BG_RANGE.width;
   const value = Math.max(range.min, Math.min(range.max, Math.round(rawValue)));
@@ -65,6 +74,7 @@ function applyApexBgWidth(rawValue) {
   if (label) label.textContent = `${value}px`;
 }
 
+/** 应用顶点背景位置并更新 UI */
 function applyApexBgPosition(axis, rawValue) {
   const range = STRATEGIC_LABEL_SCREEN_RANGE[axis];
   const value = Math.max(range.min, Math.min(range.max, rawValue / 10));
@@ -75,6 +85,7 @@ function applyApexBgPosition(axis, rawValue) {
   if (label) label.textContent = formatScreenValue(value);
 }
 
+/** 同步所有战略标签控件显示 */
 function syncLabelControlValues() {
   STRATEGIC_LABEL_ITEMS.forEach(({ key }) => {
     const position = state.strategicLabelPositions[key];
@@ -89,6 +100,7 @@ function syncLabelControlValues() {
   syncApexBgControlValues();
 }
 
+/** 应用单个标签轴坐标并更新 UI */
 function applyAxisValue(key, axis, rawValue) {
   const range = STRATEGIC_LABEL_SCREEN_RANGE[axis];
   const value = Math.max(range.min, Math.min(range.max, rawValue / 10));
@@ -99,6 +111,7 @@ function applyAxisValue(key, axis, rawValue) {
   if (label) label.textContent = formatScreenValue(value);
 }
 
+/** 应用战略标签字号并更新 UI */
 function applyFontSize(rawValue) {
   const range = STRATEGIC_LABEL_FONT_SIZE_RANGE;
   const value = Math.max(range.min, Math.min(range.max, Math.round(rawValue)));
@@ -109,6 +122,7 @@ function applyFontSize(rawValue) {
   if (label) label.textContent = `${value}px`;
 }
 
+/** 绑定战略标签控制面板事件 */
 export function setupStrategicLabelUI() {
   STRATEGIC_LABEL_ITEMS.forEach(({ key }) => {
     AXES.forEach((axis) => {

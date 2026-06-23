@@ -1,6 +1,8 @@
+/** 棱边流光 ShaderMaterial 的创建与颜色/动画 uniform 同步 */
 import { DEFAULT_PYRAMID_COLOR } from '../config/constants.js';
 import { state } from '../state/appState.js';
 
+/** 创建内外棱边流光 ShaderMaterial（isCore 区分核心/外层样式） */
 export function createEdgeFlowMaterial(isCore, phase = 0) {
   const settings = state.edgeFlowSettings;
 
@@ -84,6 +86,7 @@ export function createEdgeFlowMaterial(isCore, phase = 0) {
   });
 }
 
+/** 更新边流光材质的基色与发光色 uniform */
 export function applyEdgeFlowShaderColors(materials, hexColor) {
   if (!materials) return;
   const list = Array.isArray(materials) ? materials : [materials];
@@ -94,6 +97,7 @@ export function applyEdgeFlowShaderColors(materials, hexColor) {
   });
 }
 
+/** 同步边流光颜色、亮度与不透明度 uniform */
 export function applyEdgeFlowColors(materials, hexColor, brightness, opacity) {
   if (!materials) return;
   const list = Array.isArray(materials) ? materials : [materials];
@@ -104,6 +108,7 @@ export function applyEdgeFlowColors(materials, hexColor, brightness, opacity) {
   });
 }
 
+/** 从全局 edgeFlowSettings 同步速度、带宽与端部渐隐 uniform */
 export function applyEdgeFlowUniforms(materials) {
   if (!materials) return;
   const list = Array.isArray(materials) ? materials : [materials];

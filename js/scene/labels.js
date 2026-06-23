@@ -1,5 +1,7 @@
+/** CSS2D 三棱锥场景标签（战略文案占位） */
 import { state } from '../state/appState.js';
 
+/** 在场景中创建三条 CSS2D 战略文案标签 */
 export function createLabels() {
   const labels = [
     { text: '以战略中轴为路', position: [-3.2, 2.2, 0.8] },

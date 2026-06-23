@@ -30,6 +30,11 @@ import {
   showAllStrategicLabels,
   updateStrategicLabelReveal
 } from '../scene/strategicLabels.js';
+import {
+  hideBaseCornerConesForReveal,
+  resetBaseCornerConesReveal,
+  syncBaseCornerConesWithAxis
+} from '../scene/baseCornerCones.js';
 
 /** 底面外轮廓：1号 → 3号 → 2号 → 回到 1号 */
 const CONTOUR_VERTEX_PATH = [[0, 2], [2, 1], [1, 0]];
@@ -78,15 +83,18 @@ function buildEffectiveTimeline(reveal) {
   const axisEnd = axisStart + AXIS_DURATION;
   const slicesStart = axisEnd;
   const slicesEnd = slicesStart + SLICES_DURATION;
+  const particlesStart = slicesEnd;
 
   return {
     baseSolid: { start: baseStart, duration: BASE_SOLID_DURATION },
     cameraFly: { start: cameraStart, duration: CAMERA_FLY_DURATION },
+    baseLabel: { start: cameraStart + CAMERA_FLY_DURATION, duration: BASE_SOLID_DURATION },
     shellEdges: { start: shellStart, duration: SHELL_GRID_DURATION },
     gridInner: { start: shellStart, duration: SHELL_GRID_DURATION },
     axis: { start: axisStart, duration: AXIS_DURATION },
     slices: { start: slicesStart, duration: SLICES_DURATION },
-    particles: { start: slicesEnd, duration: PARTICLES_DURATION }
+    particles: { start: particlesStart, duration: PARTICLES_DURATION },
+    apexLabel: { start: particlesStart, duration: SLICES_DURATION }
   };
 }
 
@@ -243,6 +251,7 @@ function hidePyramidContent() {
     objects.axisShaft.visible = false;
     objects.axisShaft.scale.y = 0.001;
   }
+  hideBaseCornerConesForReveal();
   objects.slicePlanes?.forEach((plane) => {
     plane.scale.set(0.92, 1, 0.92);
   });
@@ -285,9 +294,6 @@ function hidePyramidContent() {
     mat.uniforms.uIntensity.value = 0;
   });
 
-  state.baseCornerMarkers.forEach((marker) => {
-    marker.element.style.opacity = '0';
-  });
   hideAllStrategicLabels();
 }
 
@@ -320,31 +326,12 @@ function applyPhysicalReveal(mat, baseOpacity, emissiveScale, weight) {
   }
 }
 
-function updateCornerMarkers(elapsed) {
-  const markers = state.baseCornerMarkers;
-  if (!markers.length) return;
-  if (!state.showCornerMarkers) {
-    markers.forEach((marker) => {
-      marker.element.style.opacity = '0';
-    });
-    return;
-  }
-
-  const segStarts = CONTOUR_VERTEX_PATH.map((_, i) => i * (CONTOUR_SEGMENT_DURATION - CONTOUR_SEGMENT_OVERLAP));
-
-  markers[0].element.style.opacity = elapsed > segStarts[0] ? '1' : '0';
-  markers[2].element.style.opacity = elapsed > segStarts[0] + CONTOUR_SEGMENT_DURATION * 0.85 ? '1' : '0';
-  markers[1].element.style.opacity = elapsed > segStarts[1] + CONTOUR_SEGMENT_DURATION * 0.85 ? '1' : '0';
-}
-
 function updateBaseLines(elapsed, reveal) {
   reveal.segments.forEach((segment, index) => {
     const segStart = index * (CONTOUR_SEGMENT_DURATION - CONTOUR_SEGMENT_OVERLAP);
     const progress = smootherstep(clamp01((elapsed - segStart) / CONTOUR_SEGMENT_DURATION));
     setLineProgress(segment, progress);
   });
-
-  updateCornerMarkers(elapsed);
 
   const contourProgress = getContourDrawProgress(elapsed, state.pyramidBaseVerts);
   reveal.contourProgress = contourProgress;
@@ -384,6 +371,7 @@ function updateBaseSolid(elapsed, reveal) {
   if (bottomCap) bottomCap.visible = baseW > 0.008;
   if (topCap) topCap.visible = baseW > 0.008;
   if (bottomMesh) bottomMesh.visible = solidW > 0.008;
+
   applyPhysicalRevealSoft(mats.base, 1, getFootEmissiveIntensityForReveal(), baseW);
   applyPhysicalRevealSoft(mats.solid, 1, getFootEmissiveIntensityForReveal(), solidW);
 }
@@ -435,6 +423,7 @@ function updateAxis(elapsed, timeline) {
   }
 
   applyAxisRevealWeight(w > 0.01 ? 1 : 0, { opacityFade: false });
+  syncBaseCornerConesWithAxis(w);
 }
 
 function updateSliceLayer(elapsed, sliceIndex, timeline) {
@@ -506,6 +495,7 @@ function resetRevealState() {
     objects.axisShaft.scale.y = 1;
     objects.axisShaft.visible = true;
   }
+  resetBaseCornerConesReveal();
   objects?.slicePlanes?.forEach((plane) => {
     plane.scale.set(1, 1, 1);
   });
@@ -531,9 +521,6 @@ function finishInitialReveal(reveal) {
   applyPyramidColorAndBrightness();
   applyAxisMaterial();
 
-  state.baseCornerMarkers.forEach((marker) => {
-    marker.element.style.opacity = state.showCornerMarkers ? '1' : '0';
-  });
   showAllStrategicLabels();
 
   state.initialReveal = null;
@@ -599,7 +586,7 @@ export function updateInitialReveal() {
       maybeStartAutoRotateAfterSlices(elapsed, timeline, reveal);
       updateParticles(elapsed, timeline);
     }
-    updateStrategicLabelReveal(elapsed, timeline, reveal);
+    updateStrategicLabelReveal(elapsed, timeline);
   }
 
   if (elapsed >= reveal.duration) {

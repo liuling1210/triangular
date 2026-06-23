@@ -54,6 +54,27 @@ export const DEFAULT_SLICE_GRADIENTS = [
   { start: '#61523D', end: '#D3BB92' }
 ];
 
+/** 三棱锥底角小圆柱（与中心柱分离渲染） */
+export const DEFAULT_BASE_CORNER_CYLINDER_SETTINGS = {
+  radius: 0.08,
+  height: 0.01,
+  longitudinalOffset: 0,
+  outwardOffset: 0,
+  vertexOffsets: [
+    { x: 0, y: -0.05, z: 0 },
+    { x: 0, y: -0.05, z: 0 },
+    { x: 0, y: -0.05, z: 0 }
+  ],
+  color: '#907647',
+  colorBrightness: 1,
+  emissiveStrength: 0.25,
+  emissiveIntensity: 0.57,
+  metalness: 0.9,
+  roughness: 0.15,
+  clearcoat: 0.8,
+  clearcoatRoughness: 0.1
+};
+
 export const DEFAULT_AXIS_SETTINGS = {
   color: '#DCBB98',
   colorBrightness: 1.75,
@@ -172,6 +193,7 @@ export const RENDER_ORDER = {
   shell: 2,
   particles: 4,
   edge: 5,
+  baseCornerCone: 6,
   axis: 7,
   slicePlane: 8,
   sliceInnerEdge: 9,

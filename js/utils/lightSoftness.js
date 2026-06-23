@@ -1,9 +1,7 @@
+/** 根据柔光参数同步主光与伴生柔光的衰减、距离与强度 */
 import { TOP_DOWN_LIGHT_SCALES } from '../config/constants.js';
 import { state } from '../state/appState.js';
-
-function lerp(a, b, t) {
-  return a + (b - a) * t;
-}
+import { lerp } from './math.js';
 
 const DIRECTIONAL_SOFT = {
   key: { distance: [8, 24], companionRatio: 0.75 },
@@ -15,6 +13,7 @@ const POINT_SOFT = {
   axis: { distance: [6, 18], companionDistance: [12, 28], companionRatio: 0.5 }
 };
 
+/** 更新平行光（key/fill）主光与伴生柔光的衰减、距离与强度 */
 function applyDirectionalSoftness(lightKey, intensity, topDownScale = 1) {
   const lights = state.pyramidLights;
   const settings = state.glowLightSettings;
@@ -33,6 +32,7 @@ function applyDirectionalSoftness(lightKey, intensity, topDownScale = 1) {
   soft.position.copy(main.position);
 }
 
+/** 更新点光源（core/axis）主光与伴生柔光的衰减、距离与强度 */
 function applyPointSoftness(lightKey, intensity, topDownScale = 1) {
   const lights = state.pyramidLights;
   const settings = state.glowLightSettings;
@@ -54,6 +54,7 @@ function applyPointSoftness(lightKey, intensity, topDownScale = 1) {
   soft.position.copy(main.position);
 }
 
+/** 根据俯视混合度与柔光设置，统一更新环境光及各类主/伴生光参数 */
 export function applyLightSoftness(topDownBlend) {
   const lights = state.pyramidLights;
   const settings = state.glowLightSettings;

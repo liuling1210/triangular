@@ -1,3 +1,4 @@
+/** 线框模式三棱锥：壳体、棱边、切片与底角圆柱 */
 import {
   R,
   H,
@@ -9,7 +10,9 @@ import {
 } from '../config/constants.js';
 import { state } from '../state/appState.js';
 import { getSliceVertices, radiusAtHeight } from '../utils/geometry.js';
+import { createBaseCornerConesWireframe } from './baseCornerCones.js';
 
+/** 将几何体转为线框网格并添加到父组 */
 function addWireframeMesh(parent, geo, mat, positionY, renderOrder) {
   const wireGeo = new THREE.WireframeGeometry(geo);
   const lines = new THREE.LineSegments(wireGeo, mat);
@@ -19,6 +22,7 @@ function addWireframeMesh(parent, geo, mat, positionY, renderOrder) {
   return lines;
 }
 
+/** 绘制三角形三条边线并添加到父组 */
 function addTriangleEdges(parent, v0, v1, v2, mat, renderOrder) {
   const geo = new THREE.BufferGeometry().setFromPoints([
     v0, v1,
@@ -31,6 +35,7 @@ function addTriangleEdges(parent, v0, v1, v2, mat, renderOrder) {
   return lines;
 }
 
+/** 构建完整线框三棱锥（壳体、轴、棱边、切片与底角圆柱） */
 export function createWireframePyramid(parent, apex, baseVerts, sliceHeights) {
   state.pyramidMats.wireframe = [];
 
@@ -82,4 +87,6 @@ export function createWireframePyramid(parent, apex, baseVerts, sliceHeights) {
     const sv = getSliceVertices(baseVerts, y);
     addTriangleEdges(parent, sv[0], sv[1], sv[2], sliceMat, RENDER_ORDER.sliceEdge);
   });
+
+  createBaseCornerConesWireframe(parent, baseVerts, edgeMat);
 }

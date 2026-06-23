@@ -1,3 +1,4 @@
+/** 颜色拾取器：为面板色块添加吸管按钮 */
 import { state } from '../state/appState.js';
 import {
   isEyeDropperSupported,
@@ -13,12 +14,14 @@ const EYEDROPPER_ICON = `
   <path fill="currentColor" d="M17.25 3a2.25 2.25 0 0 1 3.18 3.18l-9.9 9.9-3.36.84.84-3.36 9.24-9.56zm1.06 1.06a.75.75 0 0 0-1.06 0l-1.19 1.19 1.06 1.06 1.19-1.19a.75.75 0 0 0 0-1.06zM6.75 14.25l6.9-6.9 1.06 1.06-6.9 6.9H6v-1.06zM4.5 19.5h3.75L19.06 8.69l-1.06-1.06L7.19 18.44H4.5v1.06z"/>
 </svg>`;
 
+/** 将拾取到的颜色写入输入框并触发 input 事件 */
 function applyColorToInput(input, hex) {
   if (!input || !hex) return;
   input.value = hex;
   input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
+/** 退出画布拾色模式并恢复控制器 */
 function stopCanvasPickMode() {
   if (!activePick) return;
 
@@ -33,6 +36,7 @@ function stopCanvasPickMode() {
   activePick = null;
 }
 
+/** 进入画布点击拾色模式 */
 function startCanvasPickMode(input) {
   const renderer = state.renderer;
   const canvas = renderer?.domElement;
@@ -48,6 +52,7 @@ function startCanvasPickMode(input) {
   canvas.style.cursor = PICK_CURSOR;
   document.body.classList.add('is-color-picking');
 
+  /** 画布点击时采样颜色并退出拾色模式 */
   const onClick = (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -65,6 +70,7 @@ function startCanvasPickMode(input) {
     }
   };
 
+  /** Escape 键取消拾色模式 */
   const onKeyDown = (event) => {
     if (event.key === 'Escape') {
       stopCanvasPickMode();
@@ -76,6 +82,7 @@ function startCanvasPickMode(input) {
   window.addEventListener('keydown', onKeyDown);
 }
 
+/** 为指定颜色输入框执行拾色（优先 EyeDropper API） */
 async function pickColorForInput(input) {
   if (isEyeDropperSupported()) {
     try {
@@ -92,6 +99,7 @@ async function pickColorForInput(input) {
   startCanvasPickMode(input);
 }
 
+/** 为单个颜色输入框挂载吸管按钮 */
 function attachEyedropperButton(input) {
   if (!input || input.dataset.eyedropperReady === 'true') return;
 
@@ -114,6 +122,7 @@ function attachEyedropperButton(input) {
   input.dataset.eyedropperReady = 'true';
 }
 
+/** 为控制面板内所有颜色输入框初始化吸管功能 */
 export function setupColorEyedroppers(root = document.getElementById('control-panel')) {
   if (!root) return;
 

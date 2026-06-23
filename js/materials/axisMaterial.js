@@ -1,3 +1,4 @@
+/** 中轴 MeshPhysicalMaterial 的创建与沿高度垂直渐变 shader 注入 */
 import {
   DEFAULT_AXIS_SETTINGS,
   SOLID_BOTTOM_HEIGHT,
@@ -8,6 +9,7 @@ import {
 const AXIS_SHAFT_BASE_Y = SOLID_BOTTOM_HEIGHT;
 const AXIS_SHAFT_TOP_Y = SHAFT_CYL_HEIGHT + SHAFT_TIP_HEIGHT;
 
+/** 从轴设置中解析渐变参数，缺失项回退到默认值 */
 function getGradientSettings(settings = DEFAULT_AXIS_SETTINGS) {
   return {
     endDarkness: settings.gradientEndDarkness ?? DEFAULT_AXIS_SETTINGS.gradientEndDarkness,
@@ -17,6 +19,7 @@ function getGradientSettings(settings = DEFAULT_AXIS_SETTINGS) {
   };
 }
 
+/** 为材质注入沿轴高度方向的垂直渐变 onBeforeCompile 补丁 */
 function attachAxisVerticalGradient(material, settings = DEFAULT_AXIS_SETTINGS) {
   material.userData.axisGradientSettings = getGradientSettings(settings);
 
@@ -91,6 +94,7 @@ function attachAxisVerticalGradient(material, settings = DEFAULT_AXIS_SETTINGS) 
   material.needsUpdate = true;
 }
 
+/** 将渐变 uniform 同步到已编译的轴材质 shader */
 export function applyAxisGradientUniforms(material, settings = DEFAULT_AXIS_SETTINGS) {
   if (!material) return;
 
@@ -106,6 +110,7 @@ export function applyAxisGradientUniforms(material, settings = DEFAULT_AXIS_SETT
   shader.uniforms.uGradientStrength.value = gradient.strength;
 }
 
+/** 创建带垂直渐变 shader 的中轴 MeshPhysicalMaterial */
 export function createAxisPhysicalMaterial(settings = DEFAULT_AXIS_SETTINGS) {
   const material = new THREE.MeshPhysicalMaterial({
     color: settings.color,

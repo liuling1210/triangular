@@ -1,15 +1,16 @@
+/** 运动粒子 UI 控制 */
 import { state } from '../state/appState.js';
 import { applyMotionParticleMaterialSettings, getMotionParticleCount } from '../utils/motionParticleSettings.js';
 import { applyMotionParticleColors } from '../utils/motionParticleColors.js';
 import { rebuildInternalParticles } from '../scene/pyramid.js';
 
-export { getMotionParticleOpacity, getMotionParticleRiseSpeed, getMotionParticleCount } from '../utils/motionParticleSettings.js';
-
+/** 应用运动粒子材质与颜色（面板调节后调用） */
 export function applyMotionParticleAppearance(goldWeight = state.motionParticleGoldWeight) {
   applyMotionParticleMaterialSettings();
   applyMotionParticleColors(goldWeight);
 }
 
+/** 同步运动粒子 UI 标签显示 */
 function syncMotionParticleLabels() {
   const s = state.motionParticleSettings;
   document.getElementById('motion-particle-speed-val').textContent = `${Math.round(s.speed * 100)}%`;
@@ -18,6 +19,7 @@ function syncMotionParticleLabels() {
   document.getElementById('motion-particle-size-val').textContent = s.internalSize.toFixed(3);
 }
 
+/** 绑定运动粒子控制面板事件 */
 export function setupMotionParticleUI() {
   const s = state.motionParticleSettings;
 
